@@ -70,9 +70,13 @@ Jika tidak ada pesan error, berarti proses compile berhasil.
 
 Setelah itu, jalankan program dengan perintah berikut:
 
+```bash
 java Main
+```
 
 Jadi, perintah lengkap untuk menjalankan program adalah:
 
+```bash
 javac Main.java
 java Main
+```
