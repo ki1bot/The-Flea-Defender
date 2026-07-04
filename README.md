@@ -1,66 +1,71 @@
 # The Flea Defender
 
-The Flea Defender adalah game RPG sederhana berbasis GUI menggunakan bahasa pemrograman Java. Game ini dibuat dengan konsep Object Oriented Programming (OOP) dan menggunakan Java Swing sebagai tampilan antarmuka.
+The Flea Defender adalah game RPG survival sederhana berbasis GUI desktop menggunakan bahasa pemrograman Java dan Java Swing. Pada game ini, pemain berperan sebagai Defender yang harus bertahan hidup dari serangan Flea selama 300 detik.
 
-Pada game ini, pemain berperan sebagai Defender yang harus bertahan hidup dari serangan Flea selama 300 detik. Pemain dapat menyerang Flea, melakukan latihan untuk memulihkan HP, membeli vitamin menggunakan Resource Points (RP), atau melewati waktu.
+Project ini dibuat sebagai implementasi konsep Pemrograman Berorientasi Objek (Object Oriented Programming/OOP), seperti class, object, inheritance, encapsulation, abstraction, polymorphism, dan pemisahan tanggung jawab antar class.
 
 ## Deskripsi Game
 
-Defender memiliki Health Points (HP) dan Resource Points (RP). Flea akan menyerang Defender secara otomatis setiap 20 detik. Pemain harus menjaga HP Defender agar tidak habis sebelum waktu permainan mencapai 300 detik.
+Dalam game ini, Defender memiliki Health Points (HP) dan Resource Points (RP). Flea akan menyerang Defender secara otomatis setiap 20 detik. Pemain dapat melakukan beberapa aksi melalui tombol GUI, yaitu menyerang Flea, latihan untuk memulihkan HP, membeli vitamin, melewati waktu, atau melakukan restart game.
 
-Jika Defender berhasil bertahan sampai 300 detik, maka pemain menang. Jika HP Defender habis sebelum waktu mencapai 300 detik, maka permainan berakhir dengan status Game Over.
-
-## Perubahan dari CLI ke GUI
-
-Project ini awalnya dibuat sebagai game berbasis CLI atau terminal. Versi saat ini sudah diubah menjadi aplikasi GUI menggunakan Java Swing.
-
-Perubahan utama yang dilakukan:
-
-- Input angka melalui terminal diganti menjadi tombol GUI.
-- Output `System.out.println()` diganti menjadi log permainan pada `JTextArea`.
-- Status HP, RP, waktu, dan status latihan ditampilkan langsung pada window.
-- HP Defender, HP Flea, dan waktu permainan divisualisasikan menggunakan `JProgressBar`.
-- Logic permainan dipisahkan dari tampilan GUI agar struktur program lebih rapi.
-- Program tidak lagi menggunakan `Scanner` untuk input terminal.
+Tujuan utama permainan adalah bertahan hidup sampai waktu mencapai 300 detik. Jika HP Defender habis sebelum waktu mencapai 300 detik, maka permainan berakhir dengan status Game Over.
 
 ## Fitur Program
 
-- Game RPG sederhana berbasis Java GUI.
-- Menggunakan Java Swing.
-- Menggunakan konsep Object Oriented Programming.
-- Sistem HP untuk Defender dan Flea.
-- Sistem Resource Points (RP).
-- Flea menyerang otomatis setiap 20 detik.
-- Defender dapat menyerang Flea.
-- Defender mendapat RP setelah mengalahkan Flea.
-- Flea akan respawn setelah dikalahkan.
-- Defender dapat melakukan latihan untuk memulihkan HP.
-- Defender tidak dapat latihan dua kali berturut-turut.
-- Defender dapat membeli vitamin menggunakan RP.
-- Vitamin membutuhkan 20 RP dan memulihkan 30 HP.
-- Sistem menang jika Defender bertahan selama 300 detik.
-- Sistem kalah jika HP Defender habis.
-- Ringkasan akhir permainan ditampilkan di log GUI.
-- Tombol restart untuk memulai ulang game.
+- Game RPG survival berbasis GUI desktop
+- Dibuat menggunakan Java
+- Menggunakan Java Swing untuk tampilan antarmuka
+- Sistem HP untuk Defender dan Flea
+- Sistem Resource Points (RP)
+- Flea menyerang otomatis setiap 20 detik
+- Defender dapat menyerang Flea
+- Defender menerima self-damage saat menyerang
+- Flea akan respawn setelah dikalahkan
+- Defender mendapatkan RP setelah mengalahkan Flea
+- Defender dapat latihan untuk memulihkan HP
+- Sistem cooldown agar latihan tidak bisa dilakukan dua kali berturut-turut
+- Defender dapat membeli vitamin menggunakan RP
+- Tampilan status game menggunakan label dan progress bar
+- Log permainan ditampilkan pada area teks
+- Tombol Restart Game untuk memulai ulang permainan
+- Sistem menang jika berhasil bertahan selama 300 detik
+- Sistem kalah jika HP Defender habis
+- Ringkasan akhir permainan
 
-## Konsep OOP yang Digunakan
+## Aturan Permainan
 
-Program ini menggunakan beberapa konsep utama dalam OOP, yaitu:
+| Komponen                | Nilai           |
+| ----------------------- | --------------- |
+| HP awal Defender        | 100             |
+| HP awal Flea            | 50              |
+| RP awal Defender        | 0               |
+| Target waktu bertahan   | 300 detik       |
+| Interval serangan Flea  | Setiap 20 detik |
+| Biaya vitamin           | 20 RP           |
+| Pemulihan vitamin       | 30 HP           |
+| Reward mengalahkan Flea | 20 RP           |
 
-1. Class dan Object  
-   Program memiliki beberapa class seperti Main, Game, GameCharacter, Defender, dan Flea.
+## Aksi Pemain
 
-2. Encapsulation  
-   Atribut seperti hp, maxHp, name, dan resourcePoint dibuat private dan diakses melalui method getter atau method khusus.
+### 1. Serang Flea
 
-3. Inheritance  
-   Class Defender dan Flea merupakan turunan dari class GameCharacter.
+Defender menyerang Flea dan memberikan damage secara acak. Setelah menyerang, waktu akan bertambah 10 detik. Namun, Defender juga menerima self-damage sebagai risiko dari serangan.
 
-4. Abstraction  
-   Class GameCharacter dibuat sebagai abstract class karena digunakan sebagai class dasar untuk karakter dalam game.
+### 2. Latihan
 
-5. Method  
-   Setiap class memiliki method sesuai tanggung jawabnya, seperti attack(), heal(), takeDamage(), train(), buyVitamin(), dan start().
+Defender melakukan latihan untuk memulihkan HP. Latihan menambah waktu sebanyak 10 detik. Aksi ini tidak dapat dilakukan dua kali berturut-turut karena terdapat sistem cooldown.
+
+### 3. Beli Vitamin
+
+Defender dapat membeli vitamin jika memiliki RP yang cukup. Vitamin memulihkan HP sebesar 30 poin dan mengurangi RP sebesar 20 poin. Aksi ini tidak menambah waktu permainan.
+
+### 4. Lewati Waktu
+
+Defender melewati waktu selama 10 detik. Aksi ini juga membuat status latihan kembali siap digunakan.
+
+### 5. Restart Game
+
+Mengulang permainan dari awal dengan status Defender, Flea, waktu, dan RP yang dikembalikan ke kondisi awal.
 
 # Cara Menjalankan Program Java
 
