@@ -14,6 +14,7 @@ public class BattlePanel extends JPanel {
     private final Deque<BattleAnimation> animationQueue;
     private final Timer animationTimer;
     private final BattleRenderer renderer;
+    private final SoundManager soundManager;
 
     private BattleAnimation currentAnimation;
     private int frame;
@@ -32,6 +33,7 @@ public class BattlePanel extends JPanel {
 
         BattleAssets assets = new AssetLoader().loadBattleAssets();
         renderer = new BattleRenderer(assets);
+        soundManager = new SoundManager();
 
         setPreferredSize(new Dimension(900, 300));
         setMinimumSize(new Dimension(760, 260));
@@ -52,6 +54,14 @@ public class BattlePanel extends JPanel {
     public void setDefenderDead(boolean defenderDead) {
         this.defenderDead = defenderDead;
         repaint();
+    }
+
+    public void setSoundEnabled(boolean enabled) {
+        soundManager.setEnabled(enabled);
+    }
+
+    public boolean isSoundEnabled() {
+        return soundManager.isEnabled();
     }
 
     public void playDefenderAttack() {
@@ -90,7 +100,12 @@ public class BattlePanel extends JPanel {
         animationQueue.clear();
         currentAnimation = BattleAnimation.IDLE;
         frame = 0;
+        soundManager.stopAll();
         repaint();
+    }
+
+    public void disposeAudio() {
+        soundManager.closeAll();
     }
 
     private void enqueueAnimation(BattleAnimation animation) {
@@ -135,6 +150,7 @@ public class BattlePanel extends JPanel {
         if (next != null) {
             currentAnimation = next;
             frame = 0;
+            soundManager.play(SoundEffect.fromAnimation(currentAnimation));
         }
     }
 
