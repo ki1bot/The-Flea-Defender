@@ -39,11 +39,8 @@ public class BattleRenderer {
         int defenderFrame = getDefenderSpriteFrame(state);
         int fleaFrame = getFleaSpriteFrame(state);
 
-        int defenderGroundY = groundY + getDefenderSink(state);
-        int fleaGroundY = groundY + getFleaSink(state);
-
-        Rectangle defenderBounds = assets.getDefenderSheet().calculateDestination(defenderFrame, defenderX, defenderGroundY, 118);
-        Rectangle fleaBounds = assets.getFleaSheet().calculateDestination(fleaFrame, fleaX, fleaGroundY, 94);
+        Rectangle defenderBounds = assets.getDefenderSheet().calculateDestination(defenderFrame, defenderX, groundY, 118);
+        Rectangle fleaBounds = assets.getFleaSheet().calculateDestination(fleaFrame, fleaX, groundY, 94);
 
         if (getDefenderAlpha(state) > 0.05f) {
             effectRenderer.drawShadow(g, defenderX, groundY + 4, Math.max(48, defenderBounds.width - 26), 12);
@@ -55,10 +52,10 @@ public class BattleRenderer {
 
         drawMotionTrail(g, state, defenderFrame, fleaFrame, defenderX, fleaX, groundY);
 
-        assets.getDefenderSheet().drawGrounded(g, defenderFrame, defenderX, defenderGroundY, 118, getDefenderAlpha(state));
+        assets.getDefenderSheet().drawGrounded(g, defenderFrame, defenderX, groundY, 118, getDefenderAlpha(state));
 
         if (shouldDrawFlea(state)) {
-            assets.getFleaSheet().drawGrounded(g, fleaFrame, fleaX, fleaGroundY, 94, getFleaAlpha(state));
+            assets.getFleaSheet().drawGrounded(g, fleaFrame, fleaX, groundY, 94, getFleaAlpha(state));
         }
 
         effectRenderer.drawDust(g, animation, state.getFrame(), defenderX, fleaX, groundY, state.isFleaVisible());
@@ -92,8 +89,22 @@ public class BattleRenderer {
     private int getDefenderSpriteFrame(BattleRenderState state) {
         BattleAnimation animation = state.getAnimation();
 
-        if (animation == BattleAnimation.DEFENDER_DEATH || state.isDefenderDead()) {
-            return 3;
+        if (animation == BattleAnimation.DEFENDER_DEATH) {
+            int frame = state.getFrame();
+
+            if (frame < 16) {
+                return 4;
+            }
+
+            if (frame < 36) {
+                return 5;
+            }
+
+            return 6;
+        }
+
+        if (state.isDefenderDead()) {
+            return 6;
         }
 
         if (animation == BattleAnimation.DEFENDER_ATTACK) {
@@ -122,8 +133,22 @@ public class BattleRenderer {
     private int getFleaSpriteFrame(BattleRenderState state) {
         BattleAnimation animation = state.getAnimation();
 
-        if (animation == BattleAnimation.FLEA_DEATH || animation == BattleAnimation.FLEA_DEFEND) {
-            return 3;
+        if (animation == BattleAnimation.FLEA_DEATH) {
+            int frame = state.getFrame();
+
+            if (frame < 12) {
+                return 4;
+            }
+
+            if (frame < 28) {
+                return 5;
+            }
+
+            return 6;
+        }
+
+        if (animation == BattleAnimation.FLEA_DEFEND) {
+            return 4;
         }
 
         if (animation == BattleAnimation.FLEA_ATTACK) {
@@ -135,7 +160,7 @@ public class BattleRenderer {
                 return 2;
             }
 
-            return 0;
+            return 3;
         }
 
         if (animation == BattleAnimation.FLEA_ENTER) {
@@ -241,35 +266,13 @@ public class BattleRenderer {
         return (int) (-100 * (1.0 - easeInOut((t - 0.72) / 0.28)));
     }
 
-    private int getDefenderSink(BattleRenderState state) {
-        if (state.getAnimation() == BattleAnimation.DEFENDER_DEATH) {
-            double t = state.getFrame() / 42.0;
-            return (int) (18 * easeOut(t));
-        }
-
-        if (state.isDefenderDead()) {
-            return 18;
-        }
-
-        return 0;
-    }
-
-    private int getFleaSink(BattleRenderState state) {
-        if (state.getAnimation() == BattleAnimation.FLEA_DEATH) {
-            double t = state.getFrame() / 36.0;
-            return (int) (20 * easeOut(t));
-        }
-
-        return 0;
-    }
-
     private float getDefenderAlpha(BattleRenderState state) {
         if (state.getAnimation() == BattleAnimation.DEFENDER_DEATH) {
-            return Math.max(0.32f, 1f - state.getFrame() / 42f);
+            return 1f;
         }
 
         if (state.isDefenderDead()) {
-            return 0.32f;
+            return 0.8f;
         }
 
         return 1f;
@@ -277,7 +280,13 @@ public class BattleRenderer {
 
     private float getFleaAlpha(BattleRenderState state) {
         if (state.getAnimation() == BattleAnimation.FLEA_DEATH) {
-            return Math.max(0f, 1f - state.getFrame() / 36f);
+            double t = state.getFrame() / (double) BattleAnimation.FLEA_DEATH.getDuration();
+
+            if (t < 0.75) {
+                return 1f;
+            }
+
+            return Math.max(0f, (float) (1.0 - easeOut((t - 0.75) / 0.25)));
         }
 
         return 1f;
@@ -286,8 +295,8 @@ public class BattleRenderer {
     private int getScreenShakeX(BattleAnimation animation, int frame) {
         boolean defenderImpact = animation == BattleAnimation.DEFENDER_ATTACK && frame >= 11 && frame <= 18;
         boolean fleaImpact = animation == BattleAnimation.FLEA_ATTACK && frame >= 11 && frame <= 18;
-        boolean fleaDeath = animation == BattleAnimation.FLEA_DEATH && frame <= 14;
-        boolean defenderDeath = animation == BattleAnimation.DEFENDER_DEATH && frame <= 16;
+        boolean fleaDeath = animation == BattleAnimation.FLEA_DEATH && frame <= 18;
+        boolean defenderDeath = animation == BattleAnimation.DEFENDER_DEATH && frame <= 20;
 
         if (defenderImpact || fleaImpact || fleaDeath || defenderDeath) {
             return frame % 2 == 0 ? 3 : -3;

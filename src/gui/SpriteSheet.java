@@ -2,6 +2,7 @@ package gui;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -12,12 +13,14 @@ public class SpriteSheet {
     private final BufferedImage image;
     private final int totalFrames;
     private final Rectangle[] opaqueBounds;
+    private int maxOpaqueHeight;
 
     public SpriteSheet(String name, BufferedImage image, int totalFrames) {
         this.name = name;
         this.image = image;
         this.totalFrames = totalFrames;
         this.opaqueBounds = new Rectangle[totalFrames];
+        this.maxOpaqueHeight = 1;
         cacheOpaqueBounds();
     }
 
@@ -32,11 +35,14 @@ public class SpriteSheet {
             return new Rectangle(centerX - 40, groundY - targetHeight, 80, targetHeight);
         }
 
-        int targetWidth = Math.max(1, (int) (targetHeight * (sourceBounds.width / (double) sourceBounds.height)));
-        int x = centerX - targetWidth / 2;
-        int y = groundY - targetHeight;
+        double scale = targetHeight / (double) maxOpaqueHeight;
+        int targetWidth = Math.max(1, (int) Math.round(sourceBounds.width * scale));
+        int scaledHeight = Math.max(1, (int) Math.round(sourceBounds.height * scale));
 
-        return new Rectangle(x, y, targetWidth, targetHeight);
+        int x = centerX - targetWidth / 2;
+        int y = groundY - scaledHeight;
+
+        return new Rectangle(x, y, targetWidth, scaledHeight);
     }
 
     public void drawGrounded(Graphics2D g, int frameIndex, int centerX, int groundY, int targetHeight, float alpha) {
@@ -64,6 +70,7 @@ public class SpriteSheet {
         int sourceX2 = sourceX1 + sourceBounds.width;
         int sourceY2 = sourceY1 + sourceBounds.height;
 
+        Composite oldComposite = g.getComposite();
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 
         g.drawImage(
@@ -79,7 +86,7 @@ public class SpriteSheet {
                 null
         );
 
-        g.setComposite(AlphaComposite.SrcOver);
+        g.setComposite(oldComposite);
     }
 
     private Rectangle getOpaqueBounds(int frameIndex) {
@@ -90,6 +97,14 @@ public class SpriteSheet {
     private void cacheOpaqueBounds() {
         for (int i = 0; i < totalFrames; i++) {
             opaqueBounds[i] = calculateOpaqueBounds(i);
+
+            if (opaqueBounds[i].height > maxOpaqueHeight) {
+                maxOpaqueHeight = opaqueBounds[i].height;
+            }
+        }
+
+        if (maxOpaqueHeight <= 0) {
+            maxOpaqueHeight = 1;
         }
     }
 

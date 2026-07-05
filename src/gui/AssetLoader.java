@@ -12,8 +12,8 @@ public class AssetLoader {
         BufferedImage backgroundImage = loadImage("src/assets/background.png", "/assets/background.png");
 
         return new BattleAssets(
-                new SpriteSheet("DEFENDER", defenderImage, 4),
-                new SpriteSheet("FLEA", fleaImage, 4),
+                new SpriteSheet("DEFENDER", defenderImage, 7),
+                new SpriteSheet("FLEA", fleaImage, 7),
                 backgroundImage
         );
     }

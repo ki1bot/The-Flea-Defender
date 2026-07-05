@@ -183,7 +183,6 @@ public class GameFrame extends JFrame {
         }
 
         if (result.isDefenderDied()) {
-            battlePanel.setDefenderDead(true);
             battlePanel.playDefenderDeath();
             animationStarted = true;
         }

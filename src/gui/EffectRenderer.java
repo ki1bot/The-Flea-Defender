@@ -19,12 +19,14 @@ public class EffectRenderer {
         boolean defenderMoving = animation == BattleAnimation.DEFENDER_ATTACK && frame >= 7 && frame <= 24;
         boolean fleaMoving = fleaVisible && animation == BattleAnimation.FLEA_ATTACK && frame >= 7 && frame <= 24;
         boolean fleaEntering = animation == BattleAnimation.FLEA_ENTER;
+        boolean fleaDying = animation == BattleAnimation.FLEA_DEATH;
+        boolean defenderDying = animation == BattleAnimation.DEFENDER_DEATH;
 
-        if (defenderMoving) {
+        if (defenderMoving || defenderDying) {
             drawDustCloud(g, frame, defenderX - 32, groundY + 2, -1);
         }
 
-        if (fleaMoving || fleaEntering) {
+        if (fleaMoving || fleaEntering || fleaDying) {
             drawDustCloud(g, frame, fleaX + 38, groundY + 2, 1);
         }
     }
@@ -62,12 +64,12 @@ public class EffectRenderer {
         }
 
         if (animation == BattleAnimation.FLEA_DEATH) {
-            drawDeathParticles(g, frame, animation.getDuration(), fleaCenterX, fleaCenterY, new Color(210, 70, 210));
+            drawDeathExplosion(g, frame, animation.getDuration(), fleaCenterX, fleaCenterY, new Color(210, 70, 210));
             drawFloatingText(g, frame, animation.getDuration(), "FLEA MATI", fleaCenterX - 44, fleaBounds.y - 8, new Color(255, 180, 255));
         }
 
         if (animation == BattleAnimation.DEFENDER_DEATH) {
-            drawDeathParticles(g, frame, animation.getDuration(), defenderCenterX, defenderCenterY, new Color(255, 70, 70));
+            drawDeathExplosion(g, frame, animation.getDuration(), defenderCenterX, defenderCenterY, new Color(255, 70, 70));
             drawFloatingText(g, frame, animation.getDuration(), "DEFENDER MATI", defenderCenterX - 66, defenderBounds.y - 12, new Color(255, 100, 100));
         }
 
@@ -143,15 +145,15 @@ public class EffectRenderer {
         g.setComposite(AlphaComposite.SrcOver);
     }
 
-    private void drawDeathParticles(Graphics2D g, int frame, int duration, int x, int y, Color color) {
+    private void drawDeathExplosion(Graphics2D g, int frame, int duration, int x, int y, Color color) {
         float alpha = Math.max(0f, 1f - frame / (float) duration);
 
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         g.setColor(color);
 
-        for (int i = 0; i < 16; i++) {
-            double angle = i * Math.PI * 2 / 16;
-            int distance = 8 + frame * 2 + i % 4;
+        for (int i = 0; i < 22; i++) {
+            double angle = i * Math.PI * 2 / 22;
+            int distance = 8 + frame * 2 + i % 5;
             int particleX = x + (int) (Math.cos(angle) * distance);
             int particleY = y + (int) (Math.sin(angle) * distance);
             int size = 3 + i % 3;
