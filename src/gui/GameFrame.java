@@ -11,6 +11,8 @@ import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Font;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class GameFrame extends JFrame {
     private final GameEngine gameEngine;
@@ -32,7 +34,8 @@ public class GameFrame extends JFrame {
                 this::trainDefender,
                 this::buyVitamin,
                 this::defend,
-                this::restartGame
+                this::restartGame,
+                this::toggleSound
         );
 
         gameTimer = new Timer(1000, event -> runGameTick());
@@ -44,7 +47,7 @@ public class GameFrame extends JFrame {
         configureFrame();
         buildLayout();
 
-        logPanel.appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nAnimasi Latihan, Beli Vitamin, dan Bertahan sudah disesuaikan dengan sprite Defender.\n");
+        logPanel.appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nAnimasi Latihan, Beli Vitamin, dan Bertahan sudah disesuaikan dengan sprite Defender.\nSetiap animasi akan memutar suara dari folder src/assets/sounds.\n");
 
         updateView();
         gameTimer.start();
@@ -52,10 +55,17 @@ public class GameFrame extends JFrame {
 
     private void configureFrame() {
         setTitle("The Flea Defender GUI");
-        setSize(960, 790);
+        setSize(1020, 790);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                battlePanel.disposeAudio();
+            }
+        });
     }
 
     private void buildLayout() {
@@ -264,6 +274,7 @@ public class GameFrame extends JFrame {
         battlePanel.clearAnimations();
         battlePanel.setFleaVisible(false);
         battlePanel.setDefenderDead(false);
+        battlePanel.setSoundEnabled(controlPanel.isSoundEnabled());
         logPanel.clearLog();
         animationLocked = false;
         forcedActionAnimation = null;
@@ -288,6 +299,10 @@ public class GameFrame extends JFrame {
 
         setActionLocked(false);
         updateView();
+    }
+
+    private void toggleSound() {
+        battlePanel.setSoundEnabled(controlPanel.isSoundEnabled());
     }
 
     private void setActionLocked(boolean locked) {
