@@ -1,72 +1,48 @@
 package gui;
 
+import game.GameActionResult;
 import game.GameEngine;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.GridLayout;
 
 public class GameFrame extends JFrame {
     private final GameEngine gameEngine;
     private final BattlePanel battlePanel;
-    private final JLabel timeLabel;
-    private final JLabel defenderHpLabel;
-    private final JLabel defenderRpLabel;
-    private final JLabel fleaHpLabel;
-    private final JLabel trainingStatusLabel;
-    private final JLabel spawnInfoLabel;
-    private final JProgressBar timeBar;
-    private final JProgressBar defenderHpBar;
-    private final JProgressBar fleaHpBar;
-    private final JTextArea logArea;
-    private final JButton attackButton;
-    private final JButton trainButton;
-    private final JButton vitaminButton;
-    private final JButton skipButton;
-    private final JButton restartButton;
+    private final GameStatusPanel statusPanel;
+    private final GameLogPanel logPanel;
+    private final GameControlPanel controlPanel;
     private final Timer gameTimer;
+    private boolean animationLocked;
 
     public GameFrame() {
         gameEngine = new GameEngine();
         battlePanel = new BattlePanel();
-
-        timeLabel = new JLabel();
-        defenderHpLabel = new JLabel();
-        defenderRpLabel = new JLabel();
-        fleaHpLabel = new JLabel();
-        trainingStatusLabel = new JLabel();
-        spawnInfoLabel = new JLabel();
-
-        timeBar = new JProgressBar(0, gameEngine.getMaxTime());
-        defenderHpBar = new JProgressBar(0, gameEngine.getDefender().getMaxHp());
-        fleaHpBar = new JProgressBar(0, 1);
-
-        logArea = new JTextArea();
-
-        attackButton = new JButton("Serang Flea");
-        trainButton = new JButton("Latihan");
-        vitaminButton = new JButton("Beli Vitamin");
-        skipButton = new JButton("Bertahan");
-        restartButton = new JButton("Restart Game");
+        statusPanel = new GameStatusPanel(gameEngine.getMaxTime(), gameEngine.getDefender().getMaxHp());
+        logPanel = new GameLogPanel();
+        controlPanel = new GameControlPanel(
+                this::attackFlea,
+                this::trainDefender,
+                this::buyVitamin,
+                this::defend,
+                this::restartGame
+        );
 
         gameTimer = new Timer(1000, event -> runGameTick());
+        animationLocked = false;
+
+        battlePanel.setAnimationFinishedListener(this::handleAnimationFinished);
 
         configureFrame();
         buildLayout();
-        registerActions();
 
-        appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nDefender harus menyerang untuk membunuh Flea sebelum HP habis.\n");
+        logPanel.appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nTombol aksi dikunci selama animasi berjalan supaya input tidak menumpuk.\n");
 
         updateView();
         gameTimer.start();
@@ -88,176 +64,142 @@ public class GameFrame extends JFrame {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
 
         JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
-        centerPanel.add(createStatusPanel(), BorderLayout.NORTH);
+        centerPanel.add(statusPanel, BorderLayout.NORTH);
         centerPanel.add(battlePanel, BorderLayout.CENTER);
-        centerPanel.add(createLogPanel(), BorderLayout.SOUTH);
+        centerPanel.add(logPanel, BorderLayout.SOUTH);
 
         mainPanel.add(titleLabel, BorderLayout.NORTH);
         mainPanel.add(centerPanel, BorderLayout.CENTER);
-        mainPanel.add(createButtonPanel(), BorderLayout.SOUTH);
+        mainPanel.add(controlPanel, BorderLayout.SOUTH);
 
         add(mainPanel);
     }
 
-    private JPanel createStatusPanel() {
-        JPanel statusPanel = new JPanel(new GridLayout(6, 2, 10, 8));
-        statusPanel.setBorder(BorderFactory.createTitledBorder("Status Game"));
-
-        statusPanel.add(timeLabel);
-        statusPanel.add(timeBar);
-
-        statusPanel.add(defenderHpLabel);
-        statusPanel.add(defenderHpBar);
-
-        statusPanel.add(defenderRpLabel);
-        statusPanel.add(new JLabel("Vitamin: 20 RP / +30 HP"));
-
-        statusPanel.add(fleaHpLabel);
-        statusPanel.add(fleaHpBar);
-
-        statusPanel.add(trainingStatusLabel);
-        statusPanel.add(spawnInfoLabel);
-
-        statusPanel.add(new JLabel("Flea Dikalahkan: 0"));
-        statusPanel.add(new JLabel("Target: Bertahan sampai 300 detik"));
-
-        timeBar.setStringPainted(true);
-        defenderHpBar.setStringPainted(true);
-        fleaHpBar.setStringPainted(true);
-
-        return statusPanel;
-    }
-
-    private JScrollPane createLogPanel() {
-        logArea.setEditable(false);
-        logArea.setLineWrap(true);
-        logArea.setWrapStyleWord(true);
-        logArea.setFont(new Font("Monospaced", Font.PLAIN, 13));
-
-        JScrollPane scrollPane = new JScrollPane(logArea);
-        scrollPane.setBorder(BorderFactory.createTitledBorder("Log Permainan"));
-        scrollPane.setPreferredSize(new Dimension(900, 130));
-
-        return scrollPane;
-    }
-
-    private JPanel createButtonPanel() {
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 5, 8, 8));
-
-        buttonPanel.add(attackButton);
-        buttonPanel.add(trainButton);
-        buttonPanel.add(vitaminButton);
-        buttonPanel.add(skipButton);
-        buttonPanel.add(restartButton);
-
-        return buttonPanel;
-    }
-
-    private void registerActions() {
-        attackButton.addActionListener(event -> attackFlea());
-        trainButton.addActionListener(event -> trainDefender());
-        vitaminButton.addActionListener(event -> buyVitamin());
-        skipButton.addActionListener(event -> defend());
-        restartButton.addActionListener(event -> restartGame());
-    }
-
     private void runGameTick() {
-        String message = gameEngine.tickOneSecond();
+        if (animationLocked || gameEngine.isFinished()) {
+            return;
+        }
 
-        if (!message.isEmpty()) {
-            if (message.contains("[SPAWN]")) {
-                battlePanel.setFleaVisible(gameEngine.hasActiveFlea());
-                battlePanel.playFleaDefend();
-            }
+        GameActionResult result = gameEngine.tickOneSecond();
 
-            if (message.contains("[DAMAGE]") || message.contains("[DEFEND] Detik")) {
-                battlePanel.setFleaVisible(true);
-                battlePanel.playFleaAttack();
-            }
-
-            appendLog(message);
+        if (result.hasMessage() || result.hasAnimationEvent()) {
+            setActionLocked(true);
+            processResult(result);
+            return;
         }
 
         updateView();
-
-        if (gameEngine.isFinished()) {
-            gameTimer.stop();
-        }
     }
 
     private void attackFlea() {
-        String message = gameEngine.attackFlea();
-
-        if (message.contains("[COMBAT] Defender menyerang")) {
-            battlePanel.setFleaVisible(true);
-            battlePanel.playDefenderAttack();
+        if (animationLocked) {
+            return;
         }
 
-        if (message.contains("[KILLED]")) {
-            battlePanel.playFleaDefend();
-            scheduleFleaVisibilityRefresh();
+        setActionLocked(true);
+        processResult(gameEngine.attackFlea());
+    }
+
+    private void trainDefender() {
+        if (animationLocked) {
+            return;
         }
 
-        appendLog(message);
+        setActionLocked(true);
+        processResult(gameEngine.trainDefender());
+    }
+
+    private void buyVitamin() {
+        if (animationLocked) {
+            return;
+        }
+
+        setActionLocked(true);
+        processResult(gameEngine.buyVitamin());
+    }
+
+    private void defend() {
+        if (animationLocked) {
+            return;
+        }
+
+        setActionLocked(true);
+        processResult(gameEngine.defend());
+    }
+
+    private void processResult(GameActionResult result) {
+        if (result.hasMessage()) {
+            logPanel.appendLog(result.getMessage());
+        }
+
+        boolean animationStarted = playResultAnimations(result);
+
         updateView();
 
         if (gameEngine.isFinished()) {
             gameTimer.stop();
         }
+
+        if (!animationStarted) {
+            setActionLocked(false);
+        }
     }
 
-    private void trainDefender() {
-        String message = gameEngine.trainDefender();
+    private boolean playResultAnimations(GameActionResult result) {
+        boolean animationStarted = false;
 
-        if (message.contains("[HEAL]")) {
-            battlePanel.playHeal();
-        } else {
-            battlePanel.playDefenderDefend();
+        if (result.isFleaSpawned()) {
+            battlePanel.setFleaVisible(true);
+            battlePanel.playFleaEnter();
+            animationStarted = true;
         }
 
-        appendLog(message);
-        updateView();
-    }
-
-    private void buyVitamin() {
-        String message = gameEngine.buyVitamin();
-
-        if (message.contains("[HEAL]")) {
-            battlePanel.playHeal();
-        } else {
-            battlePanel.playDefenderDefend();
+        if (result.isDefenderAttacked()) {
+            battlePanel.setFleaVisible(true);
+            battlePanel.playDefenderAttack();
+            animationStarted = true;
         }
 
-        appendLog(message);
-        updateView();
-    }
+        if (result.isFleaAttacked()) {
+            battlePanel.setFleaVisible(true);
+            battlePanel.playFleaAttack();
+            animationStarted = true;
+        }
 
-    private void defend() {
-        String message = gameEngine.skipTime();
+        if (result.isHealed()) {
+            battlePanel.playHeal();
+            animationStarted = true;
+        }
 
-        battlePanel.playDefenderDefend();
+        if (result.isDefended()) {
+            battlePanel.playDefenderDefend();
+            animationStarted = true;
+        }
 
-        appendLog(message);
-        updateView();
-    }
+        if (result.isFleaKilled()) {
+            battlePanel.setFleaVisible(true);
+            battlePanel.playFleaDeath();
+            animationStarted = true;
+        }
 
-    private void scheduleFleaVisibilityRefresh() {
-        Timer hideTimer = new Timer(900, event -> {
-            battlePanel.setFleaVisible(gameEngine.hasActiveFlea());
-            battlePanel.repaint();
-        });
+        if (result.isDefenderDied()) {
+            battlePanel.setDefenderDead(true);
+            battlePanel.playDefenderDeath();
+            animationStarted = true;
+        }
 
-        hideTimer.setRepeats(false);
-        hideTimer.start();
+        return animationStarted;
     }
 
     private void restartGame() {
         gameEngine.reset();
         battlePanel.clearAnimations();
         battlePanel.setFleaVisible(false);
-        logArea.setText("");
+        battlePanel.setDefenderDead(false);
+        logPanel.clearLog();
+        animationLocked = false;
 
-        appendLog("Game baru dimulai.\nFlea pertama akan muncul pada detik ke-10.\n");
+        logPanel.appendLog("Game baru dimulai.\nFlea pertama akan muncul pada detik ke-10.\n");
 
         updateView();
 
@@ -266,52 +208,35 @@ public class GameFrame extends JFrame {
         }
     }
 
-    private void updateView() {
-        timeLabel.setText("Waktu: " + gameEngine.getCurrentTime() + " / " + gameEngine.getMaxTime() + " detik");
-        defenderHpLabel.setText("HP Defender: " + gameEngine.getDefender().getHp() + " / " + gameEngine.getDefender().getMaxHp());
-        defenderRpLabel.setText("RP Defender: " + gameEngine.getDefender().getResourcePoint());
-        fleaHpLabel.setText("HP Flea: " + gameEngine.getFleaStatusText());
-        trainingStatusLabel.setText("Status Latihan: " + gameEngine.getTrainingStatus());
-
-        if (gameEngine.hasActiveFlea()) {
-            spawnInfoLabel.setText("Flea aktif menyerang setiap detik");
-        } else {
-            spawnInfoLabel.setText("Flea berikutnya: detik ke-" + gameEngine.getNextFleaSpawnTime());
+    private void handleAnimationFinished() {
+        if (!gameEngine.hasActiveFlea()) {
+            battlePanel.setFleaVisible(false);
         }
 
-        timeBar.setValue(gameEngine.getCurrentTime());
-        timeBar.setString(gameEngine.getCurrentTime() + " / " + gameEngine.getMaxTime());
-
-        defenderHpBar.setMaximum(gameEngine.getDefender().getMaxHp());
-        defenderHpBar.setValue(gameEngine.getDefender().getHp());
-        defenderHpBar.setString(gameEngine.getDefender().getHp() + " / " + gameEngine.getDefender().getMaxHp());
-
-        if (gameEngine.hasActiveFlea()) {
-            fleaHpBar.setMaximum(gameEngine.getFlea().getMaxHp());
-            fleaHpBar.setValue(gameEngine.getFlea().getHp());
-            fleaHpBar.setString(gameEngine.getFlea().getHp() + " / " + gameEngine.getFlea().getMaxHp());
-        } else {
-            fleaHpBar.setMaximum(1);
-            fleaHpBar.setValue(0);
-            fleaHpBar.setString("Tidak ada Flea");
+        if (!gameEngine.getDefender().isAlive()) {
+            battlePanel.setDefenderDead(true);
         }
 
-        boolean active = !gameEngine.isFinished();
-
-        attackButton.setEnabled(active && gameEngine.hasActiveFlea());
-        trainButton.setEnabled(active && gameEngine.canTrain());
-        vitaminButton.setEnabled(active);
-        skipButton.setEnabled(active);
+        setActionLocked(false);
+        updateView();
     }
 
-    private void appendLog(String message) {
-        logArea.append(message);
+    private void setActionLocked(boolean locked) {
+        animationLocked = locked;
+        updateView();
+    }
 
-        if (!message.endsWith("\n")) {
-            logArea.append("\n");
-        }
+    private void updateView() {
+        statusPanel.updateStatus(gameEngine);
 
-        logArea.append("\n");
-        logArea.setCaretPosition(logArea.getDocument().getLength());
+        boolean active = !gameEngine.isFinished() && !animationLocked;
+
+        controlPanel.updateButtons(
+                active,
+                gameEngine.hasActiveFlea(),
+                gameEngine.canTrain(),
+                true,
+                true
+        );
     }
 }

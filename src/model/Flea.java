@@ -8,26 +8,16 @@ public class Flea extends GameCharacter {
     private final int maxDamage;
     private final int rewardPoint;
 
+    public Flea() {
+        this("Flea Normal", 45, 2, 4, 15);
+    }
+
     public Flea(String name, int maxHp, int minDamage, int maxDamage, int rewardPoint) {
         super(name, maxHp);
         this.random = new Random();
         this.minDamage = minDamage;
         this.maxDamage = maxDamage;
         this.rewardPoint = rewardPoint;
-    }
-
-    public static Flea createRandom(Random random) {
-        int type = random.nextInt(3);
-
-        if (type == 0) {
-            return new Flea("Flea Lemah", 25, 6, 10, 10);
-        }
-
-        if (type == 1) {
-            return new Flea("Flea Normal", 50, 10, 16, 20);
-        }
-
-        return new Flea("Flea Kuat", 80, 14, 22, 30);
     }
 
     public int getMinDamage() {
