@@ -17,12 +17,13 @@ public class EffectRenderer {
 
     public void drawDust(Graphics2D g, BattleAnimation animation, int frame, int defenderX, int fleaX, int groundY, boolean fleaVisible) {
         boolean defenderMoving = animation == BattleAnimation.DEFENDER_ATTACK && frame >= 7 && frame <= 24;
+        boolean defenderBracing = animation == BattleAnimation.DEFENDER_DEFEND && frame >= 4 && frame <= 18;
         boolean fleaMoving = fleaVisible && animation == BattleAnimation.FLEA_ATTACK && frame >= 7 && frame <= 24;
         boolean fleaEntering = animation == BattleAnimation.FLEA_ENTER;
         boolean fleaDying = animation == BattleAnimation.FLEA_DEATH;
         boolean defenderDying = animation == BattleAnimation.DEFENDER_DEATH;
 
-        if (defenderMoving || defenderDying) {
+        if (defenderMoving || defenderDying || defenderBracing) {
             drawDustCloud(g, frame, defenderX - 32, groundY + 2, -1);
         }
 
@@ -51,8 +52,8 @@ public class EffectRenderer {
         }
 
         if (animation == BattleAnimation.DEFENDER_DEFEND) {
-            drawShieldAura(g, frame, defenderCenterX, defenderCenterY, new Color(55, 125, 230));
-            drawFloatingText(g, frame, animation.getDuration(), "DEFEND", defenderCenterX - 34, defenderBounds.y - 12, new Color(100, 180, 255));
+            drawDefenderGuard(g, frame, defenderBounds);
+            drawFloatingText(g, frame, animation.getDuration(), "GUARD", defenderCenterX - 30, defenderBounds.y - 12, new Color(100, 190, 255));
         }
 
         if (animation == BattleAnimation.FLEA_ENTER) {
@@ -77,6 +78,40 @@ public class EffectRenderer {
             drawHealEffect(g, frame, defenderCenterX, defenderBounds.y + 26);
             drawFloatingText(g, frame, animation.getDuration(), "HEAL", defenderCenterX - 22, defenderBounds.y - 12, new Color(80, 230, 110));
         }
+    }
+
+    private void drawDefenderGuard(Graphics2D g, int frame, Rectangle defenderBounds) {
+        int guardX = defenderBounds.x + defenderBounds.width - 24;
+        int guardY = defenderBounds.y + defenderBounds.height / 2;
+
+        float pulse = (float) Math.abs(Math.sin(frame * 0.34));
+        float alpha = 0.32f + pulse * 0.38f;
+
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+
+        g.setColor(new Color(75, 160, 255));
+        g.setStroke(new BasicStroke(5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.drawArc(guardX - 44, guardY - 58, 88, 116, -70, 140);
+
+        g.setColor(new Color(185, 225, 255));
+        g.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.drawArc(guardX - 55, guardY - 70, 110, 140, -68, 136);
+
+        g.setColor(new Color(255, 236, 120));
+        g.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.drawArc(guardX - 68, guardY - 82, 136, 164, -66, 132);
+
+        for (int i = 0; i < 8; i++) {
+            int sparkX = guardX + 18 + (i % 2) * 10;
+            int sparkY = guardY - 48 + i * 14;
+            int size = 3 + i % 2;
+
+            if ((frame + i) % 3 != 0) {
+                g.fillRect(sparkX, sparkY, size, size);
+            }
+        }
+
+        g.setComposite(AlphaComposite.SrcOver);
     }
 
     private void drawDustCloud(Graphics2D g, int frame, int x, int y, int direction) {
