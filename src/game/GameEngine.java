@@ -3,29 +3,37 @@ package game;
 import model.Defender;
 import model.Flea;
 
+import java.util.Random;
+
 public class GameEngine {
     private Defender defender;
     private Flea flea;
+    private final Random random;
     private int currentTime;
     private final int maxTime;
-    private final int fleaAttackInterval;
-    private int nextFleaAttackTime;
+    private final int fleaSpawnInterval;
+    private int nextFleaSpawnTime;
+    private int defeatedFleaCount;
     private boolean canTrain;
+    private boolean defending;
     private boolean finished;
     private boolean win;
 
     public GameEngine() {
         this.maxTime = 300;
-        this.fleaAttackInterval = 20;
+        this.fleaSpawnInterval = 10;
+        this.random = new Random();
         reset();
     }
 
     public void reset() {
         defender = new Defender();
-        flea = new Flea();
+        flea = null;
         currentTime = 0;
-        nextFleaAttackTime = fleaAttackInterval;
+        nextFleaSpawnTime = fleaSpawnInterval;
+        defeatedFleaCount = 0;
         canTrain = true;
+        defending = false;
         finished = false;
         win = false;
     }
@@ -46,8 +54,24 @@ public class GameEngine {
         return maxTime;
     }
 
+    public int getFleaSpawnInterval() {
+        return fleaSpawnInterval;
+    }
+
+    public int getNextFleaSpawnTime() {
+        return nextFleaSpawnTime;
+    }
+
+    public int getDefeatedFleaCount() {
+        return defeatedFleaCount;
+    }
+
     public boolean canTrain() {
         return canTrain;
+    }
+
+    public boolean isDefending() {
+        return defending;
     }
 
     public boolean isFinished() {
@@ -58,37 +82,117 @@ public class GameEngine {
         return win;
     }
 
+    public boolean hasActiveFlea() {
+        return flea != null && flea.isAlive();
+    }
+
     public String getTrainingStatus() {
         return canTrain ? "Siap" : "Cooldown";
     }
 
-    public String attackFlea() {
+    public String getFleaStatusText() {
+        if (!hasActiveFlea()) {
+            return "Tidak ada Flea aktif";
+        }
+
+        return flea.getName() + ": " + flea.getHp() + " / " + flea.getMaxHp();
+    }
+
+    public String tickOneSecond() {
         if (finished) {
-            return "Game sudah selesai. Tekan tombol Restart untuk bermain lagi.";
+            return "";
         }
 
         StringBuilder log = new StringBuilder();
+
+        currentTime++;
+
+        if (currentTime == nextFleaSpawnTime) {
+            spawnNewFlea(log);
+            nextFleaSpawnTime += fleaSpawnInterval;
+        }
+
+        if (hasActiveFlea()) {
+            int damage = flea.rollAttackDamage();
+
+            if (defending) {
+                int reducedDamage = Math.max(1, damage / 2);
+                defender.takeDamage(reducedDamage);
+                log.append("[DEFEND] Detik ke-").append(currentTime).append(": Defender menahan serangan. Damage berkurang dari ").append(damage).append(" menjadi ").append(reducedDamage).append(".\n");
+            } else {
+                defender.takeDamage(damage);
+                log.append("[DAMAGE] Detik ke-").append(currentTime).append(": ").append(flea.getName()).append(" menyerang Defender sebesar ").append(damage).append(" damage.\n");
+            }
+
+            if (!defender.isAlive()) {
+                log.append("[DEAD] HP Defender mencapai 0.\n");
+            }
+        }
+
+        defending = false;
+
+        updateGameResult();
+
+        if (finished) {
+            log.append(getSummary());
+        }
+
+        return log.toString();
+    }
+
+    private void spawnNewFlea(StringBuilder log) {
+        if (hasActiveFlea()) {
+            log.append("[SPAWN] Detik ke-").append(currentTime).append(": ").append(flea.getName()).append(" kabur dan digantikan Flea baru.\n");
+        }
+
+        flea = Flea.createRandom(random);
+
+        log.append("[SPAWN] Detik ke-").append(currentTime).append(": ").append(flea.getName()).append(" muncul. HP ").append(flea.getMaxHp()).append(", damage ").append(flea.getMinDamage()).append("-").append(flea.getMaxDamage()).append(", reward ").append(flea.getRewardPoint()).append(" RP.\n");
+    }
+
+    public String attackFlea() {
+        if (finished) {
+            return "Game sudah selesai.\nTekan tombol Restart untuk bermain lagi.";
+        }
+
+        if (!hasActiveFlea()) {
+            canTrain = true;
+            defending = false;
+            return "[COMBAT] Tidak ada Flea aktif untuk diserang. Tunggu Flea muncul pada detik ke-" + nextFleaSpawnTime + ".\n";
+        }
+
+        StringBuilder log = new StringBuilder();
+
         int damage = defender.attack(flea);
-        log.append("[COMBAT] Defender menyerang Flea sebesar ").append(damage).append(" damage.\n");
+
+        log.append("[COMBAT] Defender menyerang ").append(flea.getName()).append(" sebesar ").append(damage).append(" damage.\n");
         log.append("[RISIKO] Defender terkena self-damage sebesar ").append(defender.getLastSelfDamage()).append(" damage.\n");
 
         if (!flea.isAlive()) {
-            int reward = 20;
+            int reward = flea.getRewardPoint();
+            defeatedFleaCount++;
             defender.addResourcePoint(reward);
-            log.append("[KILLED] Flea berhasil dikalahkan! +").append(reward).append(" RP didapatkan.\n");
-            flea.respawn();
-            log.append("[SPAWN] Flea baru telah muncul.\n");
+
+            log.append("[KILLED] ").append(flea.getName()).append(" berhasil dikalahkan! +").append(reward).append(" RP didapatkan.\n");
+
+            flea = null;
         }
 
         canTrain = true;
-        log.append(advanceTime(10));
+        defending = false;
+
         updateGameResult();
+
+        if (finished) {
+            log.append(getSummary());
+        }
+
         return log.toString();
     }
 
     public String trainDefender() {
         if (finished) {
-            return "Game sudah selesai. Tekan tombol Restart untuk bermain lagi.";
+            return "Game sudah selesai.\nTekan tombol Restart untuk bermain lagi.";
         }
 
         if (!canTrain) {
@@ -96,7 +200,9 @@ public class GameEngine {
         }
 
         StringBuilder log = new StringBuilder();
+
         int healAmount = defender.train();
+
         log.append("[TRAIN] Defender melakukan latihan fisik.\n");
 
         if (healAmount > 0) {
@@ -106,17 +212,20 @@ public class GameEngine {
         }
 
         canTrain = false;
-        log.append(advanceTime(10));
+        defending = false;
+
         updateGameResult();
+
         return log.toString();
     }
 
     public String buyVitamin() {
         if (finished) {
-            return "Game sudah selesai. Tekan tombol Restart untuk bermain lagi.";
+            return "Game sudah selesai.\nTekan tombol Restart untuk bermain lagi.";
         }
 
         StringBuilder log = new StringBuilder();
+
         int result = defender.buyVitamin();
 
         if (result == -2) {
@@ -128,54 +237,22 @@ public class GameEngine {
             log.append("[HEAL] HP Defender pulih sebesar ").append(result).append(".\n");
         }
 
+        defending = false;
+
         updateGameResult();
+
         return log.toString();
     }
 
     public String skipTime() {
         if (finished) {
-            return "Game sudah selesai. Tekan tombol Restart untuk bermain lagi.";
+            return "Game sudah selesai.\nTekan tombol Restart untuk bermain lagi.";
         }
 
-        StringBuilder log = new StringBuilder();
-        log.append("[WAIT] Defender bersiap siaga dan membiarkan waktu berjalan.\n");
         canTrain = true;
-        log.append(advanceTime(10));
-        updateGameResult();
-        return log.toString();
-    }
+        defending = true;
 
-    private String advanceTime(int seconds) {
-        StringBuilder log = new StringBuilder();
-        int targetTime = currentTime + seconds;
-
-        if (targetTime > maxTime) {
-            targetTime = maxTime;
-        }
-
-        while (currentTime < targetTime && defender.isAlive()) {
-            currentTime++;
-
-            if (currentTime == nextFleaAttackTime) {
-                log.append(checkFleaAttack());
-                nextFleaAttackTime += fleaAttackInterval;
-            }
-        }
-
-        return log.toString();
-    }
-
-    private String checkFleaAttack() {
-        StringBuilder log = new StringBuilder();
-        log.append("[EVENT] Detik ke-").append(currentTime).append(": Flea menyerang otomatis.\n");
-        int damage = flea.attack(defender);
-        log.append("[DAMAGE] Defender terkena ").append(damage).append(" damage.\n");
-
-        if (!defender.isAlive()) {
-            log.append("[DEAD] HP Defender mencapai 0.\n");
-        }
-
-        return log.toString();
+        return "[DEFEND] Defender memasang posisi bertahan. Serangan Flea berikutnya akan dikurangi.\n";
     }
 
     private void updateGameResult() {
@@ -193,6 +270,7 @@ public class GameEngine {
 
     public String getSummary() {
         StringBuilder summary = new StringBuilder();
+
         summary.append("\n========== RINGKASAN AKHIR GAME ==========\n");
 
         if (win) {
@@ -204,7 +282,9 @@ public class GameEngine {
         summary.append("Waktu Akhir : ").append(currentTime).append(" detik\n");
         summary.append("Sisa HP : ").append(defender.getHp()).append("\n");
         summary.append("Total RP : ").append(defender.getResourcePoint()).append("\n");
+        summary.append("Flea Dikalahkan : ").append(defeatedFleaCount).append("\n");
         summary.append("==========================================\n");
+
         return summary.toString();
     }
 }
