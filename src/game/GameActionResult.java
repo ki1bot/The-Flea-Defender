@@ -11,6 +11,7 @@ public class GameActionResult {
     private boolean defended;
     private boolean guardPrepared;
     private boolean guardBlocked;
+    private boolean vitaminUsed;
     private boolean gameFinished;
 
     public GameActionResult() {
@@ -30,7 +31,7 @@ public class GameActionResult {
     }
 
     public boolean hasAnimationEvent() {
-        return fleaSpawned || fleaAttacked || defenderAttacked || fleaKilled || defenderDied || healed || defended || guardPrepared || guardBlocked;
+        return fleaSpawned || fleaAttacked || defenderAttacked || fleaKilled || defenderDied || healed || defended || guardPrepared || guardBlocked || vitaminUsed;
     }
 
     public boolean isFleaSpawned() {
@@ -103,6 +104,14 @@ public class GameActionResult {
 
     public void setGuardBlocked(boolean guardBlocked) {
         this.guardBlocked = guardBlocked;
+    }
+
+    public boolean isVitaminUsed() {
+        return vitaminUsed;
+    }
+
+    public void setVitaminUsed(boolean vitaminUsed) {
+        this.vitaminUsed = vitaminUsed;
     }
 
     public boolean isGameFinished() {

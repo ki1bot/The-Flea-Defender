@@ -47,7 +47,7 @@ public class GameFrame extends JFrame {
         configureFrame();
         buildLayout();
 
-        logPanel.appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nAnimasi Latihan, Beli Vitamin, dan Bertahan sudah disesuaikan dengan sprite Defender.\nSetiap animasi akan memutar suara dari folder src/assets/sounds.\n");
+        logPanel.appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nAnimasi vitamin hanya muncul jika RP cukup dan vitamin benar-benar berhasil digunakan.\n");
 
         updateView();
         gameTimer.start();
@@ -195,12 +195,12 @@ public class GameFrame extends JFrame {
             animationStarted = true;
         }
 
-        if (result.isGuardPrepared()) {
+        if (result.isGuardPrepared() && forcedActionAnimation != BattleAnimation.DEFENDER_DEFEND) {
             battlePanel.playDefenderDefend();
             animationStarted = true;
         }
 
-        if (result.isGuardBlocked()) {
+        if (result.isGuardBlocked() && forcedActionAnimation != BattleAnimation.DEFENDER_DEFEND) {
             battlePanel.playDefenderDefend();
             animationStarted = true;
         }
@@ -250,13 +250,7 @@ public class GameFrame extends JFrame {
     }
 
     private boolean shouldPlayVitaminAnimation(GameActionResult result) {
-        String message = result.getMessage();
-
-        if (message.contains("Game sudah selesai")) {
-            return false;
-        }
-
-        return message.contains("[SHOP]");
+        return result.isVitaminUsed();
     }
 
     private boolean shouldPlayDefendAnimation(GameActionResult result) {

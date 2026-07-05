@@ -241,6 +241,7 @@ public class GameEngine {
         } else if (vitaminResult == -1) {
             result.addLog("[SHOP] RP tidak cukup. Butuh " + defender.getVitaminCost() + " RP.\n");
         } else {
+            result.setVitaminUsed(true);
             result.setHealed(true);
             result.addLog("[SHOP] Vitamin berhasil dibeli dan diminum.\n");
             result.addLog("[HEAL] HP Defender pulih sebesar " + vitaminResult + ".\n");
