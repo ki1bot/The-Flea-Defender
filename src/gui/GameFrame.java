@@ -11,8 +11,6 @@ import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Font;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 
 public class GameFrame extends JFrame {
     private final GameEngine gameEngine;
@@ -22,6 +20,7 @@ public class GameFrame extends JFrame {
     private final GameControlPanel controlPanel;
     private final Timer gameTimer;
     private boolean animationLocked;
+    private BattleAnimation forcedActionAnimation;
 
     public GameFrame() {
         gameEngine = new GameEngine();
@@ -33,19 +32,19 @@ public class GameFrame extends JFrame {
                 this::trainDefender,
                 this::buyVitamin,
                 this::defend,
-                this::restartGame,
-                this::toggleSound
+                this::restartGame
         );
 
         gameTimer = new Timer(1000, event -> runGameTick());
         animationLocked = false;
+        forcedActionAnimation = null;
 
         battlePanel.setAnimationFinishedListener(this::handleAnimationFinished);
 
         configureFrame();
         buildLayout();
 
-        logPanel.appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nSetiap animasi akan memutar suara dari folder src/assets/sounds.\n");
+        logPanel.appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nAnimasi Latihan, Beli Vitamin, dan Bertahan sudah disesuaikan dengan sprite Defender.\n");
 
         updateView();
         gameTimer.start();
@@ -53,17 +52,10 @@ public class GameFrame extends JFrame {
 
     private void configureFrame() {
         setTitle("The Flea Defender GUI");
-        setSize(1020, 790);
+        setSize(960, 790);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
-
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent event) {
-                battlePanel.disposeAudio();
-            }
-        });
     }
 
     private void buildLayout() {
@@ -90,6 +82,8 @@ public class GameFrame extends JFrame {
             return;
         }
 
+        forcedActionAnimation = null;
+
         GameActionResult result = gameEngine.tickOneSecond();
 
         if (result.hasMessage() || result.hasAnimationEvent()) {
@@ -106,6 +100,7 @@ public class GameFrame extends JFrame {
             return;
         }
 
+        forcedActionAnimation = null;
         setActionLocked(true);
         processResult(gameEngine.attackFlea());
     }
@@ -115,6 +110,7 @@ public class GameFrame extends JFrame {
             return;
         }
 
+        forcedActionAnimation = BattleAnimation.DEFENDER_TRAIN;
         setActionLocked(true);
         processResult(gameEngine.trainDefender());
     }
@@ -124,6 +120,7 @@ public class GameFrame extends JFrame {
             return;
         }
 
+        forcedActionAnimation = BattleAnimation.DEFENDER_VITAMIN;
         setActionLocked(true);
         processResult(gameEngine.buyVitamin());
     }
@@ -133,6 +130,7 @@ public class GameFrame extends JFrame {
             return;
         }
 
+        forcedActionAnimation = BattleAnimation.DEFENDER_DEFEND;
         setActionLocked(true);
         processResult(gameEngine.defend());
     }
@@ -150,6 +148,8 @@ public class GameFrame extends JFrame {
             gameTimer.stop();
         }
 
+        forcedActionAnimation = null;
+
         if (!animationStarted) {
             setActionLocked(false);
         }
@@ -157,6 +157,21 @@ public class GameFrame extends JFrame {
 
     private boolean playResultAnimations(GameActionResult result) {
         boolean animationStarted = false;
+
+        if (forcedActionAnimation == BattleAnimation.DEFENDER_TRAIN && shouldPlayTrainingAnimation(result)) {
+            battlePanel.playDefenderTrain();
+            animationStarted = true;
+        }
+
+        if (forcedActionAnimation == BattleAnimation.DEFENDER_VITAMIN && shouldPlayVitaminAnimation(result)) {
+            battlePanel.playDefenderVitamin();
+            animationStarted = true;
+        }
+
+        if (forcedActionAnimation == BattleAnimation.DEFENDER_DEFEND && shouldPlayDefendAnimation(result)) {
+            battlePanel.playDefenderDefend();
+            animationStarted = true;
+        }
 
         if (result.isFleaSpawned()) {
             battlePanel.setFleaVisible(true);
@@ -186,12 +201,12 @@ public class GameFrame extends JFrame {
             animationStarted = true;
         }
 
-        if (result.isHealed()) {
+        if (result.isHealed() && forcedActionAnimation != BattleAnimation.DEFENDER_TRAIN && forcedActionAnimation != BattleAnimation.DEFENDER_VITAMIN) {
             battlePanel.playHeal();
             animationStarted = true;
         }
 
-        if (result.isDefended() && !result.isGuardPrepared() && !result.isGuardBlocked()) {
+        if (result.isDefended() && forcedActionAnimation != BattleAnimation.DEFENDER_DEFEND && !result.isGuardPrepared() && !result.isGuardBlocked()) {
             battlePanel.playDefenderDefend();
             animationStarted = true;
         }
@@ -210,14 +225,48 @@ public class GameFrame extends JFrame {
         return animationStarted;
     }
 
+    private boolean shouldPlayTrainingAnimation(GameActionResult result) {
+        String message = result.getMessage();
+
+        if (message.contains("Game sudah selesai")) {
+            return false;
+        }
+
+        if (message.contains("[!] Kamu lelah")) {
+            return false;
+        }
+
+        return message.contains("[TRAIN]");
+    }
+
+    private boolean shouldPlayVitaminAnimation(GameActionResult result) {
+        String message = result.getMessage();
+
+        if (message.contains("Game sudah selesai")) {
+            return false;
+        }
+
+        return message.contains("[SHOP]");
+    }
+
+    private boolean shouldPlayDefendAnimation(GameActionResult result) {
+        String message = result.getMessage();
+
+        if (message.contains("Game sudah selesai")) {
+            return false;
+        }
+
+        return message.contains("[DEFEND]");
+    }
+
     private void restartGame() {
         gameEngine.reset();
         battlePanel.clearAnimations();
         battlePanel.setFleaVisible(false);
         battlePanel.setDefenderDead(false);
-        battlePanel.setSoundEnabled(controlPanel.isSoundEnabled());
         logPanel.clearLog();
         animationLocked = false;
+        forcedActionAnimation = null;
 
         logPanel.appendLog("Game baru dimulai.\nFlea pertama akan muncul pada detik ke-10.\n");
 
@@ -239,10 +288,6 @@ public class GameFrame extends JFrame {
 
         setActionLocked(false);
         updateView();
-    }
-
-    private void toggleSound() {
-        battlePanel.setSoundEnabled(controlPanel.isSoundEnabled());
     }
 
     private void setActionLocked(boolean locked) {

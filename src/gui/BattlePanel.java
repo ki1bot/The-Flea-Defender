@@ -68,6 +68,14 @@ public class BattlePanel extends JPanel {
         enqueueAnimation(BattleAnimation.DEFENDER_ATTACK);
     }
 
+    public void playDefenderTrain() {
+        enqueueAnimation(BattleAnimation.DEFENDER_TRAIN);
+    }
+
+    public void playDefenderVitamin() {
+        enqueueAnimation(BattleAnimation.DEFENDER_VITAMIN);
+    }
+
     public void playDefenderDefend() {
         enqueueAnimation(BattleAnimation.DEFENDER_DEFEND);
     }

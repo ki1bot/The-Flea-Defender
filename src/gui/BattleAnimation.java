@@ -3,7 +3,9 @@ package gui;
 public enum BattleAnimation {
     IDLE(1),
     DEFENDER_ATTACK(28),
-    DEFENDER_DEFEND(40),
+    DEFENDER_TRAIN(44),
+    DEFENDER_VITAMIN(38),
+    DEFENDER_DEFEND(42),
     DEFENDER_DEATH(54),
     FLEA_ENTER(24),
     FLEA_ATTACK(28),

@@ -25,6 +25,14 @@ public enum SoundEffect {
             return DEFENDER_ATTACK;
         }
 
+        if (animation == BattleAnimation.DEFENDER_TRAIN) {
+            return DEFENDER_ATTACK;
+        }
+
+        if (animation == BattleAnimation.DEFENDER_VITAMIN) {
+            return HEAL;
+        }
+
         if (animation == BattleAnimation.DEFENDER_DEFEND) {
             return DEFENDER_DEFEND;
         }

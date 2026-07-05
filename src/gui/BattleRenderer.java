@@ -75,7 +75,12 @@ public class BattleRenderer {
             assets.getDefenderSheet().drawGrounded(g, defenderFrame, defenderX - 42, groundY, 118, 0.12f);
         }
 
-        if (animation == BattleAnimation.DEFENDER_DEFEND && frame >= 4 && frame <= 18) {
+        if (animation == BattleAnimation.DEFENDER_TRAIN && frame >= 8 && frame <= 30) {
+            assets.getDefenderSheet().drawGrounded(g, defenderFrame, defenderX - 14, groundY, 118, 0.16f);
+            assets.getDefenderSheet().drawGrounded(g, defenderFrame, defenderX - 28, groundY, 118, 0.08f);
+        }
+
+        if (animation == BattleAnimation.DEFENDER_DEFEND && frame >= 5 && frame <= 24) {
             assets.getDefenderSheet().drawGrounded(g, defenderFrame, defenderX + 8, groundY, 118, 0.16f);
             assets.getDefenderSheet().drawGrounded(g, defenderFrame, defenderX + 16, groundY, 118, 0.08f);
         }
@@ -93,10 +98,9 @@ public class BattleRenderer {
 
     private int getDefenderSpriteFrame(BattleRenderState state) {
         BattleAnimation animation = state.getAnimation();
+        int frame = state.getFrame();
 
         if (animation == BattleAnimation.DEFENDER_DEATH) {
-            int frame = state.getFrame();
-
             if (frame < 16) {
                 return 4;
             }
@@ -113,25 +117,55 @@ public class BattleRenderer {
         }
 
         if (animation == BattleAnimation.DEFENDER_ATTACK) {
-            if (state.getFrame() < 8) {
+            if (frame < 8) {
                 return 1;
             }
 
-            if (state.getFrame() < 20) {
+            if (frame < 20) {
                 return 2;
             }
 
             return 0;
         }
 
-        if (animation == BattleAnimation.DEFENDER_DEFEND) {
-            int frame = state.getFrame();
+        if (animation == BattleAnimation.DEFENDER_TRAIN) {
+            if (frame < 8) {
+                return 0;
+            }
 
-            if (frame < 5) {
+            if (frame < 18) {
                 return 1;
             }
 
             if (frame < 32) {
+                return 2;
+            }
+
+            if (frame < 38) {
+                return 1;
+            }
+
+            return 0;
+        }
+
+        if (animation == BattleAnimation.DEFENDER_VITAMIN) {
+            if (frame < 8) {
+                return 0;
+            }
+
+            if (frame < 25) {
+                return 3;
+            }
+
+            return 0;
+        }
+
+        if (animation == BattleAnimation.DEFENDER_DEFEND) {
+            if (frame < 6) {
+                return 1;
+            }
+
+            if (frame < 34) {
                 return 3;
             }
 
@@ -139,7 +173,7 @@ public class BattleRenderer {
         }
 
         if (animation == BattleAnimation.HEAL) {
-            return state.getFrame() / 8 % 2 == 0 ? 0 : 3;
+            return frame / 8 % 2 == 0 ? 0 : 3;
         }
 
         return state.getIdleTick() / 22 % 2 == 0 ? 0 : 1;
@@ -147,10 +181,9 @@ public class BattleRenderer {
 
     private int getFleaSpriteFrame(BattleRenderState state) {
         BattleAnimation animation = state.getAnimation();
+        int frame = state.getFrame();
 
         if (animation == BattleAnimation.FLEA_DEATH) {
-            int frame = state.getFrame();
-
             if (frame < 12) {
                 return 4;
             }
@@ -167,11 +200,11 @@ public class BattleRenderer {
         }
 
         if (animation == BattleAnimation.FLEA_ATTACK) {
-            if (state.getFrame() < 8) {
+            if (frame < 8) {
                 return 1;
             }
 
-            if (state.getFrame() < 20) {
+            if (frame < 20) {
                 return 2;
             }
 
@@ -179,7 +212,7 @@ public class BattleRenderer {
         }
 
         if (animation == BattleAnimation.FLEA_ENTER) {
-            return state.getFrame() / 6 % 2 == 0 ? 0 : 1;
+            return frame / 6 % 2 == 0 ? 0 : 1;
         }
 
         return state.getIdleTick() / 24 % 2 == 0 ? 0 : 1;
@@ -190,6 +223,14 @@ public class BattleRenderer {
 
         if (animation == BattleAnimation.DEFENDER_ATTACK) {
             return "Defender menyerang Flea";
+        }
+
+        if (animation == BattleAnimation.DEFENDER_TRAIN) {
+            return "Defender berlatih menggunakan pedang";
+        }
+
+        if (animation == BattleAnimation.DEFENDER_VITAMIN) {
+            return "Defender membeli dan memakai vitamin";
         }
 
         if (animation == BattleAnimation.FLEA_ATTACK) {
@@ -233,17 +274,44 @@ public class BattleRenderer {
     }
 
     private int getDefenderOffset(BattleAnimation animation, int frame) {
+        if (animation == BattleAnimation.DEFENDER_TRAIN) {
+            if (frame < 8) {
+                return (int) (-8 * easeOut(frame / 8.0));
+            }
+
+            if (frame < 24) {
+                return -8 + (frame % 4 < 2 ? -2 : 2);
+            }
+
+            if (frame < 34) {
+                return (int) (12 * easeOut((frame - 24) / 10.0));
+            }
+
+            return (int) (12 * (1.0 - easeInOut((frame - 34) / 10.0)));
+        }
+
+        if (animation == BattleAnimation.DEFENDER_VITAMIN) {
+            if (frame < 8) {
+                return 0;
+            }
+
+            if (frame < 28) {
+                return frame % 4 < 2 ? -1 : 1;
+            }
+
+            return 0;
+        }
+
         if (animation == BattleAnimation.DEFENDER_DEFEND) {
             if (frame < 6) {
-                return (int) (-10 * easeOut(frame / 6.0));
+                return (int) (-12 * easeOut(frame / 6.0));
             }
 
-            if (frame < 30) {
-                int pulse = frame % 4 < 2 ? -2 : 2;
-                return -10 + pulse;
+            if (frame < 32) {
+                return -12 + (frame % 4 < 2 ? -2 : 2);
             }
 
-            return (int) (-10 * (1.0 - easeInOut((frame - 30) / 10.0)));
+            return (int) (-12 * (1.0 - easeInOut((frame - 32) / 10.0)));
         }
 
         if (animation != BattleAnimation.DEFENDER_ATTACK) {
@@ -323,7 +391,8 @@ public class BattleRenderer {
     private int getScreenShakeX(BattleAnimation animation, int frame) {
         boolean defenderImpact = animation == BattleAnimation.DEFENDER_ATTACK && frame >= 11 && frame <= 18;
         boolean fleaImpact = animation == BattleAnimation.FLEA_ATTACK && frame >= 11 && frame <= 18;
-        boolean defenderDefend = animation == BattleAnimation.DEFENDER_DEFEND && frame >= 6 && frame <= 14;
+        boolean defenderDefend = animation == BattleAnimation.DEFENDER_DEFEND && frame >= 6 && frame <= 15;
+        boolean defenderTrain = animation == BattleAnimation.DEFENDER_TRAIN && frame >= 18 && frame <= 28;
         boolean fleaDeath = animation == BattleAnimation.FLEA_DEATH && frame <= 18;
         boolean defenderDeath = animation == BattleAnimation.DEFENDER_DEATH && frame <= 20;
 
@@ -331,7 +400,7 @@ public class BattleRenderer {
             return frame % 2 == 0 ? 3 : -3;
         }
 
-        if (defenderDefend) {
+        if (defenderDefend || defenderTrain) {
             return frame % 2 == 0 ? 1 : -1;
         }
 
