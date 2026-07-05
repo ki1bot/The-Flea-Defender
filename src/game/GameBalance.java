@@ -3,6 +3,8 @@ package game;
 public final class GameBalance {
     public static final int MAX_TIME = 300;
     public static final int FLEA_SPAWN_INTERVAL = 10;
+    public static final int GUARD_DAMAGE_DIVIDER = 4;
+    public static final int GUARD_MIN_DAMAGE = 0;
 
     public static final int FLEA_WEAK_HP = 20;
     public static final int FLEA_WEAK_MIN_DAMAGE = 1;

@@ -42,7 +42,7 @@ public class GameFrame extends JFrame {
         configureFrame();
         buildLayout();
 
-        logPanel.appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nTombol aksi dikunci selama animasi berjalan supaya input tidak menumpuk.\n");
+        logPanel.appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nTombol Bertahan sekarang membuat guard aktif sampai serangan Flea berikutnya.\n");
 
         updateView();
         gameTimer.start();
@@ -50,7 +50,7 @@ public class GameFrame extends JFrame {
 
     private void configureFrame() {
         setTitle("The Flea Defender GUI");
-        setSize(960, 760);
+        setSize(960, 790);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
@@ -160,6 +160,16 @@ public class GameFrame extends JFrame {
             animationStarted = true;
         }
 
+        if (result.isGuardPrepared()) {
+            battlePanel.playDefenderDefend();
+            animationStarted = true;
+        }
+
+        if (result.isGuardBlocked()) {
+            battlePanel.playDefenderDefend();
+            animationStarted = true;
+        }
+
         if (result.isFleaAttacked()) {
             battlePanel.setFleaVisible(true);
             battlePanel.playFleaAttack();
@@ -171,7 +181,7 @@ public class GameFrame extends JFrame {
             animationStarted = true;
         }
 
-        if (result.isDefended()) {
+        if (result.isDefended() && !result.isGuardPrepared() && !result.isGuardBlocked()) {
             battlePanel.playDefenderDefend();
             animationStarted = true;
         }

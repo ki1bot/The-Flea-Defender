@@ -16,6 +16,7 @@ public class GameStatusPanel extends JPanel {
     private final JLabel trainingStatusLabel;
     private final JLabel spawnInfoLabel;
     private final JLabel defeatedFleaLabel;
+    private final JLabel guardStatusLabel;
     private final JProgressBar timeBar;
     private final JProgressBar defenderHpBar;
     private final JProgressBar fleaHpBar;
@@ -28,6 +29,7 @@ public class GameStatusPanel extends JPanel {
         trainingStatusLabel = new JLabel();
         spawnInfoLabel = new JLabel();
         defeatedFleaLabel = new JLabel();
+        guardStatusLabel = new JLabel();
 
         timeBar = new JProgressBar(0, maxTime);
         defenderHpBar = new JProgressBar(0, defenderMaxHp);
@@ -37,7 +39,7 @@ public class GameStatusPanel extends JPanel {
     }
 
     private void buildLayout() {
-        setLayout(new GridLayout(6, 2, 10, 8));
+        setLayout(new GridLayout(7, 2, 10, 8));
         setBorder(BorderFactory.createTitledBorder("Status Game"));
 
         add(timeLabel);
@@ -55,6 +57,9 @@ public class GameStatusPanel extends JPanel {
         add(trainingStatusLabel);
         add(spawnInfoLabel);
 
+        add(guardStatusLabel);
+        add(new JLabel("Bertahan: kurangi damage serangan berikutnya"));
+
         add(defeatedFleaLabel);
         add(new JLabel("Target: Bertahan sampai 300 detik"));
 
@@ -70,6 +75,7 @@ public class GameStatusPanel extends JPanel {
         fleaHpLabel.setText("HP Flea: " + gameEngine.getFleaStatusText());
         trainingStatusLabel.setText("Status Latihan: " + gameEngine.getTrainingStatus());
         defeatedFleaLabel.setText("Flea Dikalahkan: " + gameEngine.getDefeatedFleaCount());
+        guardStatusLabel.setText("Status Bertahan: " + gameEngine.getGuardStatusText());
 
         if (gameEngine.hasActiveFlea()) {
             spawnInfoLabel.setText("Flea aktif menyerang setiap detik");

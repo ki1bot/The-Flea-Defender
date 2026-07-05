@@ -14,7 +14,7 @@ public class GameEngine {
     private int nextFleaSpawnTime;
     private int defeatedFleaCount;
     private boolean canTrain;
-    private boolean defending;
+    private boolean guarding;
     private boolean finished;
     private boolean win;
 
@@ -31,7 +31,7 @@ public class GameEngine {
         nextFleaSpawnTime = GameBalance.FLEA_SPAWN_INTERVAL;
         defeatedFleaCount = 0;
         canTrain = true;
-        defending = false;
+        guarding = false;
         finished = false;
         win = false;
     }
@@ -64,6 +64,10 @@ public class GameEngine {
         return canTrain;
     }
 
+    public boolean isGuarding() {
+        return guarding;
+    }
+
     public boolean isFinished() {
         return finished;
     }
@@ -78,6 +82,10 @@ public class GameEngine {
 
     public String getTrainingStatus() {
         return canTrain ? "Siap" : "Cooldown";
+    }
+
+    public String getGuardStatusText() {
+        return guarding ? "Aktif sampai serangan Flea berikutnya" : "Tidak aktif";
     }
 
     public String getFleaStatusText() {
@@ -103,25 +111,9 @@ public class GameEngine {
         }
 
         if (hasActiveFlea()) {
-            int damage = flea.rollAttackDamage();
-            result.setFleaAttacked(true);
-
-            if (defending) {
-                int reducedDamage = Math.max(1, damage / 2);
-                defender.takeDamage(reducedDamage);
-                result.addLog("[DEFEND] Detik ke-" + currentTime + ": Defender menahan serangan. Damage berkurang dari " + damage + " menjadi " + reducedDamage + ".\n");
-            } else {
-                defender.takeDamage(damage);
-                result.addLog("[DAMAGE] Detik ke-" + currentTime + ": " + flea.getName() + " menyerang Defender sebesar " + damage + " damage.\n");
-            }
-
-            if (!defender.isAlive()) {
-                result.setDefenderDied(true);
-                result.addLog("[DEAD] Defender mati karena HP mencapai 0.\n");
-            }
+            applyFleaAttack(result);
         }
 
-        defending = false;
         updateGameResult(result);
 
         return result;
@@ -138,6 +130,30 @@ public class GameEngine {
         result.addLog("[SPAWN] Detik ke-" + currentTime + ": " + flea.getName() + " muncul. HP " + flea.getMaxHp() + ", damage " + flea.getMinDamage() + "-" + flea.getMaxDamage() + ", reward " + flea.getRewardPoint() + " RP.\n");
     }
 
+    private void applyFleaAttack(GameActionResult result) {
+        int damage = flea.rollAttackDamage();
+        result.setFleaAttacked(true);
+
+        if (guarding) {
+            int reducedDamage = Math.max(GameBalance.GUARD_MIN_DAMAGE, damage / GameBalance.GUARD_DAMAGE_DIVIDER);
+            defender.takeDamage(reducedDamage);
+
+            result.setDefended(true);
+            result.setGuardBlocked(true);
+            result.addLog("[GUARD] Detik ke-" + currentTime + ": Defender berhasil bertahan dari serangan " + flea.getName() + ". Damage " + damage + " dikurangi menjadi " + reducedDamage + ".\n");
+
+            guarding = false;
+        } else {
+            defender.takeDamage(damage);
+            result.addLog("[DAMAGE] Detik ke-" + currentTime + ": " + flea.getName() + " menyerang Defender sebesar " + damage + " damage.\n");
+        }
+
+        if (!defender.isAlive()) {
+            result.setDefenderDied(true);
+            result.addLog("[DEAD] Defender mati karena HP mencapai 0.\n");
+        }
+    }
+
     public GameActionResult attackFlea() {
         GameActionResult result = new GameActionResult();
 
@@ -148,7 +164,6 @@ public class GameEngine {
 
         if (!hasActiveFlea()) {
             canTrain = true;
-            defending = false;
             result.addLog("[COMBAT] Tidak ada Flea aktif untuk diserang. Tunggu Flea muncul pada detik ke-" + nextFleaSpawnTime + ".\n");
             return result;
         }
@@ -176,7 +191,6 @@ public class GameEngine {
         }
 
         canTrain = true;
-        defending = false;
         updateGameResult(result);
 
         return result;
@@ -207,7 +221,6 @@ public class GameEngine {
         }
 
         canTrain = false;
-        defending = false;
         updateGameResult(result);
 
         return result;
@@ -233,7 +246,6 @@ public class GameEngine {
             result.addLog("[HEAL] HP Defender pulih sebesar " + vitaminResult + ".\n");
         }
 
-        defending = false;
         updateGameResult(result);
 
         return result;
@@ -248,12 +260,17 @@ public class GameEngine {
         }
 
         canTrain = true;
-        defending = true;
+        guarding = true;
 
         result.setDefended(true);
-        result.addLog("[DEFEND] Defender memasang posisi bertahan. Serangan Flea berikutnya akan dikurangi.\n");
+        result.setGuardPrepared(true);
+        result.addLog("[DEFEND] Defender memasang guard. Serangan Flea berikutnya akan dikurangi besar.\n");
 
         return result;
+    }
+
+    public GameActionResult skipTime() {
+        return defend();
     }
 
     private void updateGameResult(GameActionResult result) {
