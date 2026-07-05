@@ -67,7 +67,7 @@ public class GameFrame extends JFrame {
 
     private void configureFrame() {
         setTitle("The Flea Defender GUI");
-        setSize(900, 700);
+        setSize(960, 760);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
@@ -126,7 +126,7 @@ public class GameFrame extends JFrame {
 
         JScrollPane scrollPane = new JScrollPane(logArea);
         scrollPane.setBorder(BorderFactory.createTitledBorder("Log Permainan"));
-        scrollPane.setPreferredSize(new Dimension(820, 180));
+        scrollPane.setPreferredSize(new Dimension(820, 140));
 
         return scrollPane;
     }
