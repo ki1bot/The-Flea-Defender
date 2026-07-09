@@ -29,6 +29,7 @@ public class GameFrame extends JFrame {
         battlePanel = new BattlePanel();
         statusPanel = new GameStatusPanel(gameEngine.getMaxTime(), gameEngine.getDefender().getMaxHp());
         logPanel = new GameLogPanel();
+
         controlPanel = new GameControlPanel(
                 this::attackFlea,
                 this::trainDefender,
@@ -47,7 +48,7 @@ public class GameFrame extends JFrame {
         configureFrame();
         buildLayout();
 
-        logPanel.appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nAnimasi vitamin hanya muncul jika RP cukup dan vitamin benar-benar berhasil digunakan.\n");
+        logPanel.appendLog("THE FLEA DEFENDER\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nLatihan memiliki cooldown 10 detik.\nAnimasi vitamin hanya muncul jika RP cukup dan vitamin benar-benar berhasil digunakan.\n");
 
         updateView();
         gameTimer.start();
@@ -242,11 +243,11 @@ public class GameFrame extends JFrame {
             return false;
         }
 
-        if (message.contains("[!] Kamu lelah")) {
+        if (message.contains("cooldown")) {
             return false;
         }
 
-        return message.contains("[TRAIN]");
+        return message.contains("[TRAIN] Defender melakukan latihan");
     }
 
     private boolean shouldPlayVitaminAnimation(GameActionResult result) {
@@ -260,7 +261,15 @@ public class GameFrame extends JFrame {
             return false;
         }
 
-        return message.contains("[DEFEND]");
+        if (message.contains("Belum ada Flea aktif")) {
+            return false;
+        }
+
+        if (message.contains("Guard sudah aktif")) {
+            return false;
+        }
+
+        return message.contains("[DEFEND] Defender memasang guard");
     }
 
     private void restartGame() {
@@ -270,10 +279,11 @@ public class GameFrame extends JFrame {
         battlePanel.setDefenderDead(false);
         battlePanel.setSoundEnabled(controlPanel.isSoundEnabled());
         logPanel.clearLog();
+
         animationLocked = false;
         forcedActionAnimation = null;
 
-        logPanel.appendLog("Game baru dimulai.\nFlea pertama akan muncul pada detik ke-10.\n");
+        logPanel.appendLog("Game baru dimulai.\nFlea pertama akan muncul pada detik ke-10.\nLatihan memiliki cooldown 10 detik.\n");
 
         updateView();
 
@@ -313,8 +323,8 @@ public class GameFrame extends JFrame {
                 active,
                 gameEngine.hasActiveFlea(),
                 gameEngine.canTrain(),
-                true,
-                true
+                gameEngine.canUseVitamin(),
+                gameEngine.canDefend()
         );
     }
 }
