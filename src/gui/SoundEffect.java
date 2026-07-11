@@ -61,6 +61,14 @@ public enum SoundEffect {
             return HEAL;
         }
 
+        if (animation == BattleAnimation.VICTORY) {
+            return HEAL;
+        }
+
+        if (animation == BattleAnimation.GAME_OVER) {
+            return DEFENDER_DEATH;
+        }
+
         return null;
     }
 }
