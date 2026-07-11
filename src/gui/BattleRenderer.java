@@ -59,7 +59,7 @@ public class BattleRenderer {
         }
 
         effectRenderer.drawDust(g, animation, state.getFrame(), defenderX, fleaX, groundY, state.isFleaVisible());
-        effectRenderer.drawBattleEffects(g, animation, state.getFrame(), defenderBounds, fleaBounds, state.isFleaVisible());
+        effectRenderer.drawBattleEffects(g, animation, state.getFrame(), defenderBounds, fleaBounds, state.isFleaVisible(), width, height);
 
         g.translate(-shakeX, 0);
 
@@ -176,6 +176,22 @@ public class BattleRenderer {
             return frame / 8 % 2 == 0 ? 0 : 3;
         }
 
+        if (animation == BattleAnimation.VICTORY) {
+            return frame / 10 % 2 == 0 ? 0 : 3;
+        }
+
+        if (animation == BattleAnimation.GAME_OVER) {
+            if (frame < 20) {
+                return 4;
+            }
+
+            if (frame < 40) {
+                return 5;
+            }
+
+            return 6;
+        }
+
         return state.getIdleTick() / 22 % 2 == 0 ? 0 : 1;
     }
 
@@ -255,6 +271,14 @@ public class BattleRenderer {
 
         if (animation == BattleAnimation.HEAL) {
             return "Defender memulihkan HP";
+        }
+
+        if (animation == BattleAnimation.VICTORY) {
+            return "Defender berhasil bertahan! VICTORY!";
+        }
+
+        if (animation == BattleAnimation.GAME_OVER) {
+            return "Defender telah gugur... GAME OVER";
         }
 
         return state.isFleaVisible() ? "Pertarungan di Hutan" : "Menunggu Flea muncul";
@@ -395,9 +419,15 @@ public class BattleRenderer {
         boolean defenderTrain = animation == BattleAnimation.DEFENDER_TRAIN && frame >= 18 && frame <= 28;
         boolean fleaDeath = animation == BattleAnimation.FLEA_DEATH && frame <= 18;
         boolean defenderDeath = animation == BattleAnimation.DEFENDER_DEATH && frame <= 20;
+        boolean gameOver = animation == BattleAnimation.GAME_OVER && frame >= 5 && frame <= 25;
 
         if (defenderImpact || fleaImpact || fleaDeath || defenderDeath) {
             return frame % 2 == 0 ? 3 : -3;
+        }
+
+        if (gameOver) {
+            int intensity = Math.max(1, 4 - (frame - 5) / 5);
+            return frame % 2 == 0 ? intensity : -intensity;
         }
 
         if (defenderDefend || defenderTrain) {

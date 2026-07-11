@@ -17,6 +17,7 @@ public class GameEngine {
     private boolean guarding;
     private boolean finished;
     private boolean win;
+    private int lastFleaSpawnTime;
 
     public GameEngine() {
         random = new Random();
@@ -34,6 +35,7 @@ public class GameEngine {
         guarding = false;
         finished = false;
         win = false;
+        lastFleaSpawnTime = 0;
     }
 
     public Defender getDefender() {
@@ -90,6 +92,20 @@ public class GameEngine {
 
     public boolean hasActiveFlea() {
         return flea != null && flea.isAlive();
+    }
+
+    public boolean wasFleaKilledEarly() {
+        if (hasActiveFlea()) {
+            return false;
+        }
+
+        int elapsed = currentTime - lastFleaSpawnTime;
+
+        return elapsed < GameBalance.FLEA_SPAWN_INTERVAL && lastFleaSpawnTime > 0;
+    }
+
+    public int getLastFleaSpawnTime() {
+        return lastFleaSpawnTime;
     }
 
     public String getTrainingStatus() {
@@ -158,6 +174,7 @@ public class GameEngine {
         }
 
         flea = fleaFactory.createRandomFlea();
+        lastFleaSpawnTime = currentTime;
 
         result.setFleaSpawned(true);
         result.addLog("[SPAWN] Detik ke-" + currentTime + ": " + flea.getName() + " muncul. HP " + flea.getMaxHp() + ", damage " + flea.getMinDamage() + "-" + flea.getMaxDamage() + ", reward " + flea.getRewardPoint() + " RP.\n");
@@ -314,7 +331,74 @@ public class GameEngine {
     }
 
     public GameActionResult skipTime() {
-        return defend();
+        GameActionResult combined = new GameActionResult();
+
+        if (finished) {
+            combined.addLog("Game sudah selesai.\nTekan tombol Restart untuk bermain lagi.\n");
+            return combined;
+        }
+
+        int ticksToSkip = Math.min(10, GameBalance.MAX_TIME - currentTime);
+
+        for (int i = 0; i < ticksToSkip; i++) {
+            if (finished) {
+                break;
+            }
+
+            GameActionResult tick = tickOneSecond();
+
+            if (tick.hasMessage()) {
+                combined.addLog(tick.getMessage());
+            }
+
+            if (tick.isFleaSpawned()) {
+                combined.setFleaSpawned(true);
+            }
+
+            if (tick.isFleaAttacked()) {
+                combined.setFleaAttacked(true);
+            }
+
+            if (tick.isDefenderAttacked()) {
+                combined.setDefenderAttacked(true);
+            }
+
+            if (tick.isFleaKilled()) {
+                combined.setFleaKilled(true);
+            }
+
+            if (tick.isDefenderDied()) {
+                combined.setDefenderDied(true);
+            }
+
+            if (tick.isHealed()) {
+                combined.setHealed(true);
+            }
+
+            if (tick.isDefended()) {
+                combined.setDefended(true);
+            }
+
+            if (tick.isGuardPrepared()) {
+                combined.setGuardPrepared(true);
+            }
+
+            if (tick.isGuardBlocked()) {
+                combined.setGuardBlocked(true);
+            }
+
+            if (tick.isVitaminUsed()) {
+                combined.setVitaminUsed(true);
+            }
+
+            if (tick.isGameFinished()) {
+                combined.setGameFinished(true);
+            }
+        }
+
+        combined.addLog("[SKIP] Waktu dilompati 10 detik. Waktu sekarang: " + currentTime + " detik.\n");
+
+        return combined;
     }
 
     private void updateGameResult(GameActionResult result) {

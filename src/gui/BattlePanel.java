@@ -104,6 +104,14 @@ public class BattlePanel extends JPanel {
         enqueueAnimation(BattleAnimation.HEAL);
     }
 
+    public void playVictory() {
+        enqueueAnimation(BattleAnimation.VICTORY);
+    }
+
+    public void playGameOver() {
+        enqueueAnimation(BattleAnimation.GAME_OVER);
+    }
+
     public void clearAnimations() {
         animationQueue.clear();
         currentAnimation = BattleAnimation.IDLE;

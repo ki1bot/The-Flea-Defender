@@ -4,6 +4,8 @@ import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
@@ -33,7 +35,7 @@ public class EffectRenderer {
         }
     }
 
-    public void drawBattleEffects(Graphics2D g, BattleAnimation animation, int frame, Rectangle defenderBounds, Rectangle fleaBounds, boolean fleaVisible) {
+    public void drawBattleEffects(Graphics2D g, BattleAnimation animation, int frame, Rectangle defenderBounds, Rectangle fleaBounds, boolean fleaVisible, int panelWidth, int panelHeight) {
         int defenderCenterX = defenderBounds.x + defenderBounds.width / 2;
         int defenderCenterY = defenderBounds.y + defenderBounds.height / 2;
 
@@ -89,6 +91,309 @@ public class EffectRenderer {
             drawHealEffect(g, frame, defenderCenterX, defenderBounds.y + 26);
             drawFloatingText(g, frame, animation.getDuration(), "HEAL", defenderCenterX - 22, defenderBounds.y - 12, new Color(80, 230, 110));
         }
+
+        if (animation == BattleAnimation.VICTORY) {
+            drawVictoryEffect(g, frame, panelWidth, panelHeight, defenderCenterX, defenderCenterY);
+        }
+
+        if (animation == BattleAnimation.GAME_OVER) {
+            drawGameOverEffect(g, frame, panelWidth, panelHeight, defenderCenterX, defenderCenterY);
+        }
+    }
+
+    private void drawVictoryEffect(Graphics2D g, int frame, int panelWidth, int panelHeight, int defenderX, int defenderY) {
+        // Golden glow behind defender that grows outward
+        if (frame >= 5) {
+            float glowAlpha = Math.min(0.45f, (frame - 5) / 30f);
+            int glowRadius = 30 + frame * 2;
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, glowAlpha));
+            g.setColor(new Color(255, 215, 0));
+            g.fillOval(defenderX - glowRadius, defenderY - glowRadius, glowRadius * 2, glowRadius * 2);
+            g.setColor(new Color(255, 245, 150));
+            int innerRadius = glowRadius / 2;
+            g.fillOval(defenderX - innerRadius, defenderY - innerRadius, innerRadius * 2, innerRadius * 2);
+            g.setComposite(AlphaComposite.SrcOver);
+        }
+
+        // Fireworks bursting from multiple points
+        if (frame >= 10) {
+            drawFirework(g, frame - 10, panelWidth / 5, panelHeight / 4, new Color(255, 100, 100));
+            drawFirework(g, frame - 15, panelWidth * 4 / 5, panelHeight / 3, new Color(100, 200, 255));
+            drawFirework(g, frame - 20, panelWidth / 2, panelHeight / 5, new Color(255, 230, 80));
+            drawFirework(g, frame - 30, panelWidth / 3, panelHeight / 2, new Color(130, 255, 130));
+            drawFirework(g, frame - 38, panelWidth * 2 / 3, panelHeight / 4, new Color(255, 170, 255));
+        }
+
+        // Rising golden sparkles around defender
+        if (frame >= 8) {
+            float sparkleAlpha = Math.min(0.85f, (frame - 8) / 15f);
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, sparkleAlpha));
+
+            for (int i = 0; i < 16; i++) {
+                double angle = (i * Math.PI * 2 / 16) + frame * 0.06;
+                int radius = 50 + (int) (Math.sin(frame * 0.15 + i) * 20) + frame;
+                int sparkX = defenderX + (int) (Math.cos(angle) * radius);
+                int sparkY = defenderY + (int) (Math.sin(angle) * radius) - frame;
+
+                if (i % 3 == 0) {
+                    g.setColor(new Color(255, 215, 0));
+                } else if (i % 3 == 1) {
+                    g.setColor(new Color(255, 245, 180));
+                } else {
+                    g.setColor(new Color(255, 190, 50));
+                }
+
+                int starSize = 3 + (frame + i) % 4;
+                drawStar(g, sparkX, sparkY, starSize);
+            }
+
+            g.setComposite(AlphaComposite.SrcOver);
+        }
+
+        // Radiant rings expanding outward
+        if (frame >= 15 && frame < 65) {
+            for (int ring = 0; ring < 3; ring++) {
+                int ringFrame = frame - 15 - ring * 10;
+
+                if (ringFrame > 0 && ringFrame < 40) {
+                    float ringAlpha = Math.max(0f, 0.6f - ringFrame / 40f);
+                    int ringRadius = ringFrame * 5;
+
+                    g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, ringAlpha));
+                    g.setColor(new Color(255, 230, 100));
+                    g.setStroke(new BasicStroke(3f));
+                    g.drawOval(defenderX - ringRadius, defenderY - ringRadius, ringRadius * 2, ringRadius * 2);
+                    g.setComposite(AlphaComposite.SrcOver);
+                }
+            }
+        }
+
+        // Victory banner
+        if (frame >= 20) {
+            float bannerAlpha = Math.min(1f, (frame - 20) / 15f);
+            drawBanner(g, panelWidth, panelHeight, "VICTORY!", bannerAlpha, frame,
+                    new Color(255, 200, 0), new Color(255, 160, 0), new Color(80, 50, 0));
+        }
+    }
+
+    private void drawGameOverEffect(Graphics2D g, int frame, int panelWidth, int panelHeight, int defenderX, int defenderY) {
+        // Dark vignette overlay that gradually covers the screen
+        if (frame >= 5) {
+            float overlayAlpha = Math.min(0.55f, (frame - 5) / 40f);
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, overlayAlpha));
+            g.setColor(new Color(20, 0, 0));
+            g.fillRect(0, 0, panelWidth, panelHeight);
+            g.setComposite(AlphaComposite.SrcOver);
+        }
+
+        // Red pulse flash
+        if (frame >= 8 && frame < 50) {
+            float pulseAlpha = (float) (Math.sin(frame * 0.25) * 0.15);
+            if (pulseAlpha > 0) {
+                g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, pulseAlpha));
+                g.setColor(new Color(200, 0, 0));
+                g.fillRect(0, 0, panelWidth, panelHeight);
+                g.setComposite(AlphaComposite.SrcOver);
+            }
+        }
+
+        // Falling ember particles
+        if (frame >= 10) {
+            float emberAlpha = Math.min(0.75f, (frame - 10) / 20f);
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, emberAlpha));
+
+            for (int i = 0; i < 24; i++) {
+                int emberX = (i * 83 + frame * (1 + i % 3)) % panelWidth;
+                int emberY = (i * 47 + frame * (2 + i % 2)) % panelHeight;
+                int sway = (int) (Math.sin(frame * 0.1 + i) * 6);
+
+                if (i % 3 == 0) {
+                    g.setColor(new Color(255, 80, 30));
+                } else if (i % 3 == 1) {
+                    g.setColor(new Color(255, 140, 40));
+                } else {
+                    g.setColor(new Color(200, 50, 20));
+                }
+
+                int size = 2 + i % 3;
+                g.fillRect(emberX + sway, emberY, size, size);
+
+                // Small glow around each ember
+                if (i % 2 == 0) {
+                    g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, emberAlpha * 0.3f));
+                    g.fillOval(emberX + sway - 2, emberY - 2, size + 4, size + 4);
+                    g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, emberAlpha));
+                }
+            }
+
+            g.setComposite(AlphaComposite.SrcOver);
+        }
+
+        // Skull crossbones at center
+        if (frame >= 15 && frame < 70) {
+            float skullAlpha = Math.min(0.7f, (frame - 15) / 20f);
+            if (frame > 55) {
+                skullAlpha = Math.max(0f, skullAlpha - (frame - 55) / 15f);
+            }
+
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, skullAlpha));
+
+            int skullX = panelWidth / 2;
+            int skullY = panelHeight / 2 - 20;
+            int bounce = (int) (Math.sin(frame * 0.12) * 4);
+
+            // Skull circle
+            g.setColor(new Color(180, 180, 180));
+            g.fillOval(skullX - 22, skullY - 22 + bounce, 44, 48);
+
+            // Eye sockets
+            g.setColor(new Color(40, 0, 0));
+            g.fillOval(skullX - 14, skullY - 10 + bounce, 12, 14);
+            g.fillOval(skullX + 2, skullY - 10 + bounce, 12, 14);
+
+            // Nose
+            g.fillOval(skullX - 4, skullY + 6 + bounce, 8, 6);
+
+            // Mouth line
+            g.setStroke(new BasicStroke(2f));
+            g.drawLine(skullX - 10, skullY + 18 + bounce, skullX + 10, skullY + 18 + bounce);
+            for (int i = 0; i < 4; i++) {
+                int lineX = skullX - 8 + i * 6;
+                g.drawLine(lineX, skullY + 14 + bounce, lineX, skullY + 22 + bounce);
+            }
+
+            // Crossbones
+            g.setColor(new Color(160, 160, 160));
+            g.setStroke(new BasicStroke(5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.drawLine(skullX - 36, skullY + 28 + bounce, skullX + 36, skullY + 58 + bounce);
+            g.drawLine(skullX + 36, skullY + 28 + bounce, skullX - 36, skullY + 58 + bounce);
+
+            // Bone ends
+            int[][] ends = {{-36, 28}, {36, 28}, {-36, 58}, {36, 58}};
+            for (int[] end : ends) {
+                g.fillOval(skullX + end[0] - 5, skullY + end[1] + bounce - 5, 10, 10);
+            }
+
+            g.setComposite(AlphaComposite.SrcOver);
+        }
+
+        // Cracks spreading from center
+        if (frame >= 12 && frame < 60) {
+            float crackAlpha = Math.min(0.5f, (frame - 12) / 20f);
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, crackAlpha));
+            g.setColor(new Color(100, 0, 0));
+            g.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            int cx = panelWidth / 2;
+            int cy = panelHeight / 2;
+            int reach = (frame - 12) * 4;
+
+            for (int i = 0; i < 8; i++) {
+                double angle = i * Math.PI / 4 + 0.3;
+                int endX = cx + (int) (Math.cos(angle) * reach);
+                int endY = cy + (int) (Math.sin(angle) * reach);
+                int midX = cx + (int) (Math.cos(angle + 0.2) * reach / 2);
+                int midY = cy + (int) (Math.sin(angle - 0.1) * reach / 2);
+
+                g.drawLine(cx, cy, midX, midY);
+                g.drawLine(midX, midY, endX, endY);
+            }
+
+            g.setComposite(AlphaComposite.SrcOver);
+        }
+
+        // Game Over banner
+        if (frame >= 25) {
+            float bannerAlpha = Math.min(1f, (frame - 25) / 15f);
+            drawBanner(g, panelWidth, panelHeight, "GAME OVER", bannerAlpha, frame,
+                    new Color(180, 20, 20), new Color(120, 0, 0), new Color(255, 200, 200));
+        }
+    }
+
+    private void drawFirework(Graphics2D g, int frame, int x, int y, Color color) {
+        if (frame < 0 || frame > 30) {
+            return;
+        }
+
+        float alpha = Math.max(0f, 1f - frame / 30f);
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+
+        int numParticles = 14;
+        for (int i = 0; i < numParticles; i++) {
+            double angle = i * Math.PI * 2 / numParticles;
+            int distance = frame * 4 + (i % 3) * 2;
+            int px = x + (int) (Math.cos(angle) * distance);
+            int py = y + (int) (Math.sin(angle) * distance) + frame / 3;
+            int size = Math.max(1, 4 - frame / 10);
+
+            g.setColor(color);
+            g.fillRect(px, py, size, size);
+
+            // Trail
+            if (frame > 3) {
+                int trailDist = distance - 8;
+                int tx = x + (int) (Math.cos(angle) * trailDist);
+                int ty = y + (int) (Math.sin(angle) * trailDist) + (frame - 2) / 3;
+                g.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 100));
+                g.fillRect(tx, ty, Math.max(1, size - 1), Math.max(1, size - 1));
+            }
+        }
+
+        // Center flash
+        if (frame < 6) {
+            g.setColor(Color.WHITE);
+            int flashSize = 8 - frame;
+            g.fillOval(x - flashSize, y - flashSize, flashSize * 2, flashSize * 2);
+        }
+
+        g.setComposite(AlphaComposite.SrcOver);
+    }
+
+    private void drawStar(Graphics2D g, int x, int y, int size) {
+        g.fillRect(x - size / 2, y, size, 1);
+        g.fillRect(x, y - size / 2, 1, size);
+        g.fillRect(x - size / 4, y - size / 4, size / 2, size / 2);
+    }
+
+    private void drawBanner(Graphics2D g, int panelWidth, int panelHeight, String text, float alpha, int frame, Color topColor, Color bottomColor, Color textColor) {
+        int bannerHeight = 52;
+        int bannerY = panelHeight / 2 - bannerHeight / 2 + 50;
+
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha * 0.85f));
+        GradientPaint gradient = new GradientPaint(0, bannerY, topColor, 0, bannerY + bannerHeight, bottomColor);
+        g.setPaint(gradient);
+        g.fillRect(0, bannerY, panelWidth, bannerHeight);
+
+        // Border lines
+        g.setColor(new Color(255, 255, 255, (int) (alpha * 180)));
+        g.setStroke(new BasicStroke(2f));
+        g.drawLine(0, bannerY, panelWidth, bannerY);
+        g.drawLine(0, bannerY + bannerHeight, panelWidth, bannerY + bannerHeight);
+
+        // Shimmer effect
+        int shimmerX = (frame * 8) % (panelWidth + 100) - 50;
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha * 0.25f));
+        g.setColor(Color.WHITE);
+        g.fillRect(shimmerX, bannerY, 30, bannerHeight);
+        g.fillRect(shimmerX + 40, bannerY, 15, bannerHeight);
+
+        // Text
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+        g.setFont(new Font("Arial", Font.BOLD, 32));
+        FontMetrics fm = g.getFontMetrics();
+        int textWidth = fm.stringWidth(text);
+        int textX = (panelWidth - textWidth) / 2;
+        int textY = bannerY + bannerHeight / 2 + fm.getAscent() / 2 - 2;
+
+        // Text shadow
+        g.setColor(new Color(0, 0, 0, (int) (alpha * 150)));
+        g.drawString(text, textX + 2, textY + 2);
+
+        // Main text
+        g.setColor(textColor);
+        g.drawString(text, textX, textY);
+
+        g.setComposite(AlphaComposite.SrcOver);
     }
 
     private void drawTrainingEffect(Graphics2D g, int frame, Rectangle defenderBounds) {
