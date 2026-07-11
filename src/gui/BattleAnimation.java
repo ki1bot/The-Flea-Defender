@@ -11,7 +11,9 @@ public enum BattleAnimation {
     FLEA_ATTACK(28),
     FLEA_DEFEND(28),
     FLEA_DEATH(44),
-    HEAL(32);
+    HEAL(32),
+    VICTORY(80),
+    GAME_OVER(90);
 
     private final int duration;
 
