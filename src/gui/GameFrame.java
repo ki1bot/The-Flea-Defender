@@ -24,6 +24,7 @@ public class GameFrame extends JFrame {
     private boolean animationLocked;
     private BattleAnimation forcedActionAnimation;
     private boolean gameStarted;
+    private boolean gameRunning;
     private boolean waitingForContinue;
 
     public GameFrame() {
@@ -33,7 +34,7 @@ public class GameFrame extends JFrame {
         logPanel = new GameLogPanel();
 
         controlPanel = new GameControlPanel(
-                this::startGame,
+                this::toggleGame,
                 this::attackFlea,
                 this::trainDefender,
                 this::buyVitamin,
@@ -49,6 +50,7 @@ public class GameFrame extends JFrame {
         animationLocked = false;
         forcedActionAnimation = null;
         gameStarted = false;
+        gameRunning = false;
         waitingForContinue = false;
 
         battlePanel.setAnimationFinishedListener(this::handleAnimationFinished);
@@ -96,24 +98,59 @@ public class GameFrame extends JFrame {
         add(mainPanel);
     }
 
-    private void startGame() {
-        if (gameStarted) {
+    private void toggleGame() {
+        if (gameEngine.isFinished()) {
+            logPanel.appendLog("[INFO] Permainan sudah selesai. Tekan 'Restart Game' untuk bermain lagi.\n");
             return;
         }
 
+        if (!gameStarted) {
+            startNewGame();
+            return;
+        }
+
+        if (gameRunning) {
+            stopGame();
+        } else {
+            resumeGame();
+        }
+    }
+
+    private void startNewGame() {
         gameStarted = true;
+        gameRunning = true;
         waitingForContinue = false;
 
         logPanel.clearLog();
         logPanel.appendLog("Game dimulai!\nFlea pertama muncul pada detik ke-10.\nFlea baru akan muncul setiap 10 detik.\nJika Flea aktif, dia menyerang Defender setiap detik.\nSetiap Flea punya HP, damage, dan reward yang berbeda.\nLatihan memiliki cooldown 10 detik.\nAnimasi vitamin hanya muncul jika RP cukup dan vitamin benar-benar berhasil digunakan.\n");
 
-        controlPanel.showGameMode();
         updateView();
         gameTimer.start();
     }
 
+    private void stopGame() {
+        gameRunning = false;
+
+        if (gameTimer.isRunning()) {
+            gameTimer.stop();
+        }
+
+        logPanel.appendLog("[STOP] Permainan dihentikan sementara. Tekan 'Start Game' untuk melanjutkan.\n");
+        updateView();
+    }
+
+    private void resumeGame() {
+        gameRunning = true;
+        logPanel.appendLog("[START] Permainan dilanjutkan.\n");
+        updateView();
+
+        if (!gameTimer.isRunning()) {
+            gameTimer.start();
+        }
+    }
+
     private void runGameTick() {
-        if (animationLocked || gameEngine.isFinished() || waitingForContinue) {
+        if (!gameRunning || animationLocked || gameEngine.isFinished() || waitingForContinue) {
             return;
         }
 
@@ -131,7 +168,7 @@ public class GameFrame extends JFrame {
     }
 
     private void attackFlea() {
-        if (animationLocked || !gameStarted || waitingForContinue) {
+        if (!gameRunning || animationLocked || !gameStarted || waitingForContinue) {
             return;
         }
 
@@ -141,7 +178,7 @@ public class GameFrame extends JFrame {
     }
 
     private void trainDefender() {
-        if (animationLocked || !gameStarted || waitingForContinue) {
+        if (!gameRunning || animationLocked || !gameStarted || waitingForContinue) {
             return;
         }
 
@@ -151,7 +188,7 @@ public class GameFrame extends JFrame {
     }
 
     private void buyVitamin() {
-        if (animationLocked || !gameStarted || waitingForContinue) {
+        if (!gameRunning || animationLocked || !gameStarted || waitingForContinue) {
             return;
         }
 
@@ -161,7 +198,7 @@ public class GameFrame extends JFrame {
     }
 
     private void defend() {
-        if (animationLocked || !gameStarted || waitingForContinue) {
+        if (!gameRunning || animationLocked || !gameStarted || waitingForContinue) {
             return;
         }
 
@@ -176,7 +213,7 @@ public class GameFrame extends JFrame {
     }
 
     private void skipTime() {
-        if (animationLocked || !gameStarted || waitingForContinue) {
+        if (!gameRunning || animationLocked || !gameStarted || waitingForContinue) {
             return;
         }
 
@@ -192,7 +229,7 @@ public class GameFrame extends JFrame {
     }
 
     private void continueGame() {
-        if (!waitingForContinue) {
+        if (!gameRunning || !waitingForContinue) {
             return;
         }
 
@@ -213,6 +250,7 @@ public class GameFrame extends JFrame {
         updateView();
 
         if (gameEngine.isFinished()) {
+            gameRunning = false;
             gameTimer.stop();
         }
 
@@ -354,6 +392,7 @@ public class GameFrame extends JFrame {
         animationLocked = false;
         forcedActionAnimation = null;
         gameStarted = false;
+        gameRunning = false;
         waitingForContinue = false;
 
         logPanel.appendLog("THE FLEA DEFENDER\nTekan tombol 'Start Game' untuk memulai permainan.\n");
@@ -404,15 +443,20 @@ public class GameFrame extends JFrame {
             return;
         }
 
-        boolean active = !gameEngine.isFinished() && !animationLocked && !waitingForContinue;
+        boolean active = gameRunning
+                && !gameEngine.isFinished()
+                && !animationLocked
+                && !waitingForContinue;
 
         controlPanel.updateButtons(
+                gameRunning,
                 active,
                 gameEngine.hasActiveFlea(),
                 gameEngine.canTrain(),
                 gameEngine.canUseVitamin(),
                 gameEngine.canDefend(),
-                waitingForContinue
+                waitingForContinue,
+                gameEngine.isFinished()
         );
     }
 }

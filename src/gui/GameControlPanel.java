@@ -6,37 +6,47 @@ import javax.swing.JToggleButton;
 import java.awt.GridLayout;
 
 public class GameControlPanel extends JPanel {
-    private final JButton startButton;
+    private final JButton startStopButton;
     private final JButton attackButton;
+    private final JButton defendButton;
     private final JButton trainButton;
     private final JButton vitaminButton;
-    private final JButton defendButton;
-    private final JButton exitButton;
     private final JButton skipTimeButton;
     private final JButton continueButton;
     private final JButton restartButton;
     private final JToggleButton soundButton;
+    private final JButton exitButton;
 
-    public GameControlPanel(Runnable startAction, Runnable attackAction, Runnable trainAction, Runnable vitaminAction, Runnable defendAction, Runnable exitAction, Runnable skipTimeAction, Runnable continueAction, Runnable restartAction, Runnable soundToggleAction) {
-        startButton = new JButton("Start Game");
+    public GameControlPanel(
+            Runnable startStopAction,
+            Runnable attackAction,
+            Runnable trainAction,
+            Runnable vitaminAction,
+            Runnable defendAction,
+            Runnable exitAction,
+            Runnable skipTimeAction,
+            Runnable continueAction,
+            Runnable restartAction,
+            Runnable soundToggleAction
+    ) {
+        startStopButton = new JButton("Start Game");
         attackButton = new JButton("Serang Flea");
+        defendButton = new JButton("Bertahan");
         trainButton = new JButton("Latihan");
         vitaminButton = new JButton("Beli Vitamin");
-        defendButton = new JButton("Bertahan");
-        exitButton = new JButton("Keluar");
         skipTimeButton = new JButton("Lewati 10 Detik");
         continueButton = new JButton("Lanjutkan");
         restartButton = new JButton("Restart Game");
         soundButton = new JToggleButton("Suara: ON");
+        exitButton = new JButton("Keluar");
 
         soundButton.setSelected(true);
 
-        startButton.addActionListener(event -> startAction.run());
+        startStopButton.addActionListener(event -> startStopAction.run());
         attackButton.addActionListener(event -> attackAction.run());
+        defendButton.addActionListener(event -> defendAction.run());
         trainButton.addActionListener(event -> trainAction.run());
         vitaminButton.addActionListener(event -> vitaminAction.run());
-        defendButton.addActionListener(event -> defendAction.run());
-        exitButton.addActionListener(event -> exitAction.run());
         skipTimeButton.addActionListener(event -> skipTimeAction.run());
         continueButton.addActionListener(event -> continueAction.run());
         restartButton.addActionListener(event -> restartAction.run());
@@ -44,6 +54,7 @@ public class GameControlPanel extends JPanel {
             updateSoundButtonText();
             soundToggleAction.run();
         });
+        exitButton.addActionListener(event -> exitAction.run());
 
         buildLayout();
     }
@@ -51,62 +62,73 @@ public class GameControlPanel extends JPanel {
     private void buildLayout() {
         setLayout(new GridLayout(2, 5, 8, 8));
 
-        add(startButton);
+        // Baris pertama: kontrol utama permainan.
+        add(startStopButton);
         add(attackButton);
+        add(defendButton);
         add(trainButton);
         add(vitaminButton);
-        add(defendButton);
-        add(exitButton);
+
+        // Baris kedua: kontrol pendukung dan aplikasi.
         add(skipTimeButton);
         add(continueButton);
         add(restartButton);
         add(soundButton);
+        add(exitButton);
     }
 
     public void showStartMode() {
-        startButton.setEnabled(true);
-        startButton.setVisible(true);
+        updateStartStopButton(false, true);
 
         attackButton.setEnabled(false);
+        defendButton.setEnabled(false);
         trainButton.setEnabled(false);
         vitaminButton.setEnabled(false);
-        defendButton.setEnabled(false);
-        exitButton.setEnabled(true);
         skipTimeButton.setEnabled(false);
         continueButton.setEnabled(false);
         restartButton.setEnabled(false);
         soundButton.setEnabled(true);
+        exitButton.setEnabled(true);
     }
 
-    public void showGameMode() {
-        startButton.setEnabled(false);
-        startButton.setVisible(false);
-    }
-
-    public void updateButtons(boolean active, boolean canAttack, boolean canTrain, boolean canUseVitamin, boolean canDefend, boolean showContinue) {
-        startButton.setEnabled(false);
-        startButton.setVisible(false);
+    public void updateButtons(
+            boolean gameRunning,
+            boolean active,
+            boolean canAttack,
+            boolean canTrain,
+            boolean canUseVitamin,
+            boolean canDefend,
+            boolean showContinue,
+            boolean gameFinished
+    ) {
+        updateStartStopButton(gameRunning, !gameFinished);
 
         attackButton.setEnabled(active && canAttack);
+        defendButton.setEnabled(active && canDefend);
         trainButton.setEnabled(active && canTrain);
         vitaminButton.setEnabled(active && canUseVitamin);
-        defendButton.setEnabled(active && canDefend);
-        exitButton.setEnabled(true);
         skipTimeButton.setEnabled(active);
         restartButton.setEnabled(true);
         soundButton.setEnabled(true);
+        exitButton.setEnabled(true);
 
-        if (showContinue) {
+        if (showContinue && gameRunning && !gameFinished) {
             continueButton.setEnabled(true);
 
             attackButton.setEnabled(false);
+            defendButton.setEnabled(false);
             trainButton.setEnabled(false);
             vitaminButton.setEnabled(false);
-            defendButton.setEnabled(false);
             skipTimeButton.setEnabled(false);
         } else {
             continueButton.setEnabled(false);
         }
+    }
+
+    private void updateStartStopButton(boolean gameRunning, boolean enabled) {
+        startStopButton.setText(gameRunning ? "Stop Game" : "Start Game");
+        startStopButton.setEnabled(enabled);
+        startStopButton.setVisible(true);
     }
 
     public boolean isSoundEnabled() {
@@ -114,10 +136,6 @@ public class GameControlPanel extends JPanel {
     }
 
     private void updateSoundButtonText() {
-        if (soundButton.isSelected()) {
-            soundButton.setText("Suara: ON");
-        } else {
-            soundButton.setText("Suara: OFF");
-        }
+        soundButton.setText(soundButton.isSelected() ? "Suara: ON" : "Suara: OFF");
     }
 }
