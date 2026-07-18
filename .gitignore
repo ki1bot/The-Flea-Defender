@@ -1,4 +1,7 @@
-build/
+build-linux/
+build-windows/
+dist-linux/
+dist-windows/
 out/
 bin/
 target/
